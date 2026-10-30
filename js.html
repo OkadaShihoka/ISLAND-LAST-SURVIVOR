@@ -1,0 +1,1197 @@
+<script>
+/**
+ * ISLAND: LAST SURVIVOR - Client Script
+ */
+
+// ==========================================
+// 状態管理 (App State)
+// ==========================================
+var State = {
+  player: null,
+  token: null,
+  island: null,
+  members: [],
+  personalInventory: [],
+  sharedInventory: [],
+  buildings: [],
+  messages: [],
+  logs: [],
+  itemsMap: {},
+  soundEnabled: true,
+  pollingTimer: null,
+  isBusy: false,
+  selectedRole: 'EXPLORER',
+  pendingGiveItemId: null,
+  pendingRescueTargetId: null
+};
+
+// アイテムのアイコン定義
+var ITEM_ICONS = {
+  wood: '🪵',
+  stone: '🪨',
+  berry: '🍓',
+  water: '💧',
+  fish: '🐟',
+  herb: '🌿',
+  iron_ore: '⛏️',
+  rope: '🪢',
+  cloth: '🧶',
+  stone_axe: '🪓',
+  spear: '🗡️',
+  fishing_rod: '🎣',
+  torch: '🔥',
+  raft_piece: '⛵'
+};
+
+var BUILDING_INFO = {
+  campfire: { name: '焚き火', icon: '🔥', desc: '夜の寒さと猛獣の被害を抑え、スタミナを維持する。' },
+  tent: { name: 'テント', icon: '⛺', desc: '休息時のスタミナ回復量を+15上昇させる。' },
+  cabin: { name: '木の小屋', icon: '🛖', desc: '暴風雨の被害を完全に防ぎ、スタミナ回復量を大幅UP。' },
+  water_collector: { name: '貯水設備', icon: '🪣', desc: '朝を迎えるたび、きれいな水×4を共有倉庫に蓄える。' },
+  raft: { name: '脱出用いかだ', icon: '⛵', desc: 'Lv.3まで建造し、水と食料を備蓄することで島から脱出可能！' }
+};
+
+// ==========================================
+// Web Audio API サウンド効果（外部ファイル不要）
+// ==========================================
+var SoundFx = {
+  ctx: null,
+  init: function() {
+    if (!this.ctx) {
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  },
+  playTone: function(freq, type, duration, gainVal) {
+    if (!State.soundEnabled) return;
+    try {
+      this.init();
+      if (!this.ctx) return;
+      var osc = this.ctx.createOscillator();
+      var gain = this.ctx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      gain.gain.setValueAtTime(gainVal || 0.1, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    } catch(e) {}
+  },
+  click: function() {
+    this.playTone(480, 'triangle', 0.06, 0.08);
+  },
+  success: function() {
+    var self = this;
+    this.playTone(523, 'sine', 0.1, 0.1);
+    setTimeout(function() { self.playTone(659, 'sine', 0.1, 0.1); }, 80);
+    setTimeout(function() { self.playTone(784, 'sine', 0.2, 0.12); }, 160);
+  },
+  craft: function() {
+    var self = this;
+    this.playTone(330, 'square', 0.08, 0.08);
+    setTimeout(function() { self.playTone(440, 'square', 0.08, 0.08); }, 90);
+    setTimeout(function() { self.playTone(587, 'triangle', 0.18, 0.1); }, 180);
+  },
+  damage: function() {
+    this.playTone(150, 'sawtooth', 0.25, 0.15);
+  },
+  victory: function() {
+    var self = this;
+    [523, 659, 784, 1046].forEach(function(f, i) {
+      setTimeout(function() { self.playTone(f, 'sine', 0.35, 0.15); }, i * 150);
+    });
+  }
+};
+
+// ==========================================
+// UI ヘルパー関数
+// ==========================================
+
+function showToast(message, type) {
+  var container = document.getElementById('toastContainer');
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + (type || 'info');
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(function() {
+    if (toast.parentNode) toast.parentNode.removeChild(toast);
+  }, 3500);
+}
+
+function showLoading(text) {
+  State.isBusy = true;
+  document.getElementById('loadingText').textContent = text || '通信中...';
+  document.getElementById('loadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+  State.isBusy = false;
+  document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+function openModal(modalId) {
+  var m = document.getElementById(modalId);
+  if (m) m.classList.add('active');
+}
+
+function closeModal(modalId) {
+  var m = document.getElementById(modalId);
+  if (m) m.classList.remove('active');
+}
+
+function showView(viewId) {
+  var views = ['viewTitle', 'viewLobby', 'viewGame', 'viewVictory', 'viewGameOver'];
+  views.forEach(function(v) {
+    var el = document.getElementById(v);
+    if (el) el.style.display = (v === viewId) ? 'block' : 'none';
+  });
+  if (viewId === 'viewTitle') {
+    var titleEl = document.getElementById('viewTitle');
+    if (titleEl) titleEl.style.display = 'flex';
+  }
+}
+
+// ==========================================
+// 初期化 & セーブ・ロード
+// ==========================================
+
+window.addEventListener('DOMContentLoaded', function() {
+  bindUIEvents();
+  checkSavedSession();
+});
+
+function checkSavedSession() {
+  var savedPlayerId = localStorage.getItem('island_player_id');
+  var savedToken = localStorage.getItem('island_auth_token');
+  var statusText = document.getElementById('sessionStatusText');
+
+  if (savedPlayerId && savedToken) {
+    statusText.textContent = '以前のセッションを確認中...';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.success) {
+          State.player = res.player;
+          State.token = savedToken;
+          updateHeaderProfile();
+          statusText.textContent = 'プレイヤー: ' + res.player.name + ' (' + res.player.role + ') でログイン済み';
+          
+          if (res.currentIsland) {
+            State.island = res.currentIsland;
+            document.getElementById('btnTitleResumeIsland').style.display = 'block';
+            document.getElementById('btnTitleResumeIsland').textContent = '🔄 「' + res.currentIsland.island_name + '」に戻る';
+          }
+        } else {
+          statusText.textContent = '新規プレイヤーとして開始できます';
+          localStorage.removeItem('island_player_id');
+          localStorage.removeItem('island_auth_token');
+        }
+      })
+      .withFailureHandler(function() {
+        statusText.textContent = '通信環境を確認してください';
+      })
+      .verifySession(savedPlayerId, savedToken);
+  } else {
+    statusText.textContent = '新規プレイヤーとして開始できます';
+  }
+}
+
+function updateHeaderProfile() {
+  var tag = document.getElementById('playerProfileTag');
+  if (State.player) {
+    tag.style.display = 'inline-block';
+    tag.textContent = '👤 ' + State.player.name + ' [' + State.player.role + ']';
+  } else {
+    tag.style.display = 'none';
+  }
+}
+
+// ==========================================
+// イベントリスナー設定
+// ==========================================
+
+function bindUIEvents() {
+  // サウンド切り替え
+  document.getElementById('btnSoundToggle').addEventListener('click', function() {
+    State.soundEnabled = !State.soundEnabled;
+    this.textContent = State.soundEnabled ? '🔊' : '🔇';
+    showToast('効果音: ' + (State.soundEnabled ? 'ON' : 'OFF'));
+  });
+
+  // ヘルプモーダル
+  document.getElementById('btnHelp').addEventListener('click', function() {
+    openModal('modalHowToPlay');
+    SoundFx.click();
+  });
+  document.getElementById('btnTitleHowToPlay').addEventListener('click', function() {
+    openModal('modalHowToPlay');
+    SoundFx.click();
+  });
+
+  // モーダル閉じるボタンの汎用ハンドラ
+  document.querySelectorAll('.modal-close, [data-close]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var modalId = this.getAttribute('data-close') || this.closest('.modal-overlay').id;
+      closeModal(modalId);
+      SoundFx.click();
+    });
+  });
+
+  // 役割選択カードの切り替え
+  document.querySelectorAll('.role-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      document.querySelectorAll('.role-card').forEach(function(c) { c.classList.remove('selected'); });
+      this.classList.add('selected');
+      State.selectedRole = this.getAttribute('data-role');
+      SoundFx.click();
+    });
+  });
+
+  // タイトルボタン：新しい島を作る
+  document.getElementById('btnTitleCreateIsland').addEventListener('click', function() {
+    SoundFx.click();
+    ensureRegistered(function() {
+      openModal('modalCreateIsland');
+    });
+  });
+
+  // タイトルボタン：フレンドの島に参加する
+  document.getElementById('btnTitleJoinIsland').addEventListener('click', function() {
+    SoundFx.click();
+    ensureRegistered(function() {
+      openModal('modalJoinIsland');
+    });
+  });
+
+  // タイトルボタン：自分の島に戻る
+  document.getElementById('btnTitleResumeIsland').addEventListener('click', function() {
+    SoundFx.click();
+    if (State.island) {
+      enterGame();
+    }
+  });
+
+  // プレイヤー登録確定
+  document.getElementById('btnSubmitRegister').addEventListener('click', function() {
+    var name = document.getElementById('regPlayerName').value.trim();
+    if (!name) {
+      showToast('名前を入力してください', 'error');
+      return;
+    }
+    showLoading('生存者を登録中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          State.player = res.player;
+          State.token = res.token;
+          localStorage.setItem('island_player_id', res.playerId);
+          localStorage.setItem('island_auth_token', res.token);
+          updateHeaderProfile();
+          closeModal('modalRegister');
+          showToast('サバイバー登録完了！', 'success');
+          SoundFx.success();
+          if (State.postRegisterCallback) {
+            State.postRegisterCallback();
+            State.postRegisterCallback = null;
+          }
+        } else {
+          showToast(res.message || '登録エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .registerPlayer(name, State.selectedRole);
+  });
+
+  // 島作成確定
+  document.getElementById('btnSubmitCreateIsland').addEventListener('click', function() {
+    var islandName = document.getElementById('inputCreateIslandName').value.trim() || '名もなき孤島';
+    showLoading('島を開拓中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          closeModal('modalCreateIsland');
+          SoundFx.success();
+          showToast('島を開拓しました！招待コード: ' + res.inviteCode, 'success');
+          loadIslandData(res.islandId, function() {
+            enterLobby();
+          });
+        } else {
+          showToast(res.message || '島作成エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .createIsland(State.player.playerId, State.token, islandName);
+  });
+
+  // 招待コード参加確定
+  document.getElementById('btnSubmitJoinIsland').addEventListener('click', function() {
+    var code = document.getElementById('inputJoinInviteCode').value.trim();
+    if (!code) {
+      showToast('招待コードを入力してください', 'error');
+      return;
+    }
+    showLoading('島を探索中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          closeModal('modalJoinIsland');
+          SoundFx.success();
+          showToast('「' + res.islandName + '」に合流しました！', 'success');
+          loadIslandData(res.islandId, function() {
+            enterLobby();
+          });
+        } else {
+          showToast(res.message || '参加エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .joinIsland(State.player.playerId, State.token, code);
+  });
+
+  // 招待コードコピー
+  document.getElementById('btnCopyInviteCode').addEventListener('click', function() {
+    var code = document.getElementById('lobbyInviteCode').textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(function() {
+        showToast('招待コードをクリップボードにコピーしました！', 'success');
+        SoundFx.click();
+      });
+    } else {
+      showToast('招待コード: ' + code);
+    }
+  });
+
+  // ロビーから島へ出発
+  document.getElementById('btnStartAdventure').addEventListener('click', function() {
+    SoundFx.success();
+    enterGame();
+  });
+
+  // ロビーから退出
+  document.getElementById('btnLeaveLobby').addEventListener('click', function() {
+    if (confirm('島から退出しますか？（後から招待コードで再参加できます）')) {
+      showLoading('退出中...');
+      google.script.run
+        .withSuccessHandler(function() {
+          hideLoading();
+          stopPolling();
+          State.island = null;
+          showView('viewTitle');
+        })
+        .withFailureHandler(function() {
+          hideLoading();
+          showView('viewTitle');
+        })
+        .leaveIsland(State.player.playerId, State.token, State.island.island_id);
+    }
+  });
+
+  // メインタブ切り替え
+  document.querySelectorAll('.nav-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var targetTabId = this.getAttribute('data-tab');
+      document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.style.display = 'none'; });
+      this.classList.add('active');
+      var content = document.getElementById(targetTabId);
+      if (content) content.style.display = 'block';
+      SoundFx.click();
+    });
+  });
+
+  // 探索ボタン
+  document.querySelectorAll('.btn-explore').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var loc = this.getAttribute('data-location');
+      executeExplore(loc);
+    });
+  });
+
+  // 時間を進める / 休息ボタン
+  document.getElementById('btnAdvanceTime').addEventListener('click', function() {
+    SoundFx.click();
+    if (confirm('時間を進めて休息をとりますか？（空腹と渇きが進行し、拠点設備によってスタミナが回復します）')) {
+      executeAdvanceTime();
+    }
+  });
+
+  // チャット送信
+  document.getElementById('btnSendChatMessage').addEventListener('click', executeSendMessage);
+  document.getElementById('inputChatMessage').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') executeSendMessage();
+  });
+
+  // アイテム譲渡実行確定
+  document.getElementById('btnSubmitGiveItem').addEventListener('click', function() {
+    var targetPlayerId = document.getElementById('selectGiveTarget').value;
+    var qty = parseInt(document.getElementById('inputGiveQuantity').value, 10);
+    if (!targetPlayerId || isNaN(qty) || qty <= 0) {
+      showToast('相手と数量を正しく選択してください', 'error');
+      return;
+    }
+    showLoading('アイテムを手渡し中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        closeModal('modalGiveItem');
+        if (res && res.success) {
+          SoundFx.success();
+          showToast('アイテムを手渡しました！', 'success');
+          pollState();
+        } else {
+          showToast(res.message || '手渡しエラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .giveItemToPlayer(State.player.playerId, State.token, State.island.island_id, targetPlayerId, State.pendingGiveItemId, qty);
+  });
+
+  // 救助実行確定
+  document.getElementById('btnSubmitRescue').addEventListener('click', function() {
+    if (!State.pendingRescueTargetId) return;
+    showLoading('救助中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        closeModal('modalRescue');
+        if (res && res.success) {
+          SoundFx.success();
+          showToast(res.message, 'success');
+          pollState();
+        } else {
+          showToast(res.message || '救助エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .rescuePlayer(State.player.playerId, State.token, State.island.island_id, State.pendingRescueTargetId);
+  });
+
+  // 脱出実行
+  document.getElementById('btnEscapeRaft').addEventListener('click', function() {
+    if (confirm('いかだに乗り込み、未知の大海原へと脱出しますか？（全員でクリアとなります！）')) {
+      showLoading('脱出出港中...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res && res.success) {
+            SoundFx.victory();
+            showVictory(State.island.day);
+          } else {
+            showToast(res.message || '脱出条件を満たしていません', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          showToast('通信エラー: ' + err.message, 'error');
+        })
+        .escapeIsland(State.player.playerId, State.token, State.island.island_id);
+    }
+  });
+
+  // リザルト画面からタイトルへ
+  document.getElementById('btnVictoryReturnTitle').addEventListener('click', function() {
+    stopPolling();
+    State.island = null;
+    showView('viewTitle');
+  });
+  document.getElementById('btnGameoverReturnTitle').addEventListener('click', function() {
+    stopPolling();
+    State.island = null;
+    showView('viewTitle');
+  });
+}
+
+function ensureRegistered(callback) {
+  if (State.player && State.token) {
+    callback();
+  } else {
+    State.postRegisterCallback = callback;
+    openModal('modalRegister');
+  }
+}
+
+// ==========================================
+// ロビー & ゲーム画面遷移
+// ==========================================
+
+function enterLobby() {
+  showView('viewLobby');
+  document.getElementById('lobbyIslandName').textContent = State.island.island_name;
+  document.getElementById('lobbyInviteCode').textContent = State.island.invite_code;
+  renderLobbyMembers();
+  startPolling();
+}
+
+function enterGame() {
+  showView('viewGame');
+  updateGameView();
+  startPolling();
+}
+
+function renderLobbyMembers() {
+  var list = document.getElementById('lobbyMemberList');
+  list.innerHTML = '';
+  document.getElementById('lobbyMemberCount').textContent = State.members.length;
+
+  State.members.forEach(function(m) {
+    var item = document.createElement('div');
+    item.className = 'team-chip';
+    item.innerHTML = `
+      <div class="${m.isOnline ? 'online-dot' : 'offline-dot'}"></div>
+      <div style="flex: 1;">
+        <span style="font-weight: 700; color: #fff;">${m.name}</span>
+        <span style="font-size: 0.75rem; color: var(--accent-gold); margin-left: 6px;">[${m.role}]</span>
+      </div>
+      <span style="font-size: 0.75rem; color: var(--text-muted);">${m.isOnline ? 'オンライン' : '離席中'}</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// ==========================================
+// 準リアルタイムポーリング (3〜5秒同期)
+// ==========================================
+
+function startPolling() {
+  stopPolling();
+  // 初回即時
+  pollState();
+  // 4秒間隔
+  State.pollingTimer = setInterval(function() {
+    pollState();
+  }, 4000);
+}
+
+function stopPolling() {
+  if (State.pollingTimer) {
+    clearInterval(State.pollingTimer);
+    State.pollingTimer = null;
+  }
+}
+
+function pollState() {
+  if (!State.player || !State.island) return;
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success) {
+        State.island = res.island;
+        State.player = res.player;
+        State.members = res.members || [];
+        State.personalInventory = res.personalInventory || [];
+        State.sharedInventory = res.sharedInventory || [];
+        State.buildings = res.buildings || [];
+        State.messages = res.messages || [];
+        State.logs = res.logs || [];
+        State.itemsMap = res.itemsMap || {};
+
+        // ゲーム状態判定
+        if (State.island.island_status === 'CLEARED') {
+          showVictory(State.island.day);
+          return;
+        }
+        if (State.island.island_status === 'GAMEOVER') {
+          showGameOver(State.island.day);
+          return;
+        }
+
+        updateGameView();
+        renderLobbyMembers();
+      }
+    })
+    .getIslandState(State.player.playerId, State.token, State.island.island_id, null, null);
+}
+
+function loadIslandData(islandId, callback) {
+  showLoading('島情報を取得中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        State.island = res.island;
+        State.player = res.player;
+        State.members = res.members || [];
+        State.personalInventory = res.personalInventory || [];
+        State.sharedInventory = res.sharedInventory || [];
+        State.buildings = res.buildings || [];
+        State.messages = res.messages || [];
+        State.logs = res.logs || [];
+        State.itemsMap = res.itemsMap || {};
+        if (callback) callback();
+      } else {
+        showToast(res.message || '島の読み込みに失敗しました', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .getIslandState(State.player.playerId, State.token, islandId, null, null);
+}
+
+// ==========================================
+// ゲーム画面ビューの更新
+// ==========================================
+
+function updateGameView() {
+  if (!State.island || !State.player) return;
+
+  // 1. HUD情報
+  document.getElementById('hudIslandName').textContent = State.island.island_name;
+  document.getElementById('hudDay').textContent = State.island.day;
+
+  var pBadge = document.getElementById('hudTimePeriod');
+  var pNames = { MORNING: '朝', NOON: '昼', EVENING: '夕方', NIGHT: '夜' };
+  var pClasses = { MORNING: 'period-morning', NOON: 'period-noon', EVENING: 'period-evening', NIGHT: 'period-night' };
+  pBadge.textContent = pNames[State.island.time_period] || State.island.time_period;
+  pBadge.className = 'time-period-badge ' + (pClasses[State.island.time_period] || '');
+
+  // 2. ステータスゲージ
+  updateGauge('valHp', 'gaugeHp', State.player.hp);
+  updateGauge('valHunger', 'gaugeHunger', State.player.hunger);
+  updateGauge('valThirst', 'gaugeThirst', State.player.thirst);
+  updateGauge('valStamina', 'gaugeStamina', State.player.stamina);
+
+  // 3. 仲間ステータスHUD
+  var teamPanel = document.getElementById('teamPanel');
+  teamPanel.innerHTML = '';
+  State.members.forEach(function(m) {
+    if (m.playerId === State.player.playerId) return; // 自分以外
+    var chip = document.createElement('div');
+    chip.className = 'team-chip' + (m.status === 'DEAD' ? ' is-dead' : '');
+    
+    var rescueBtnHtml = (m.status === 'DEAD' && State.player.status === 'ALIVE')
+      ? `<button class="btn btn-sm btn-danger" onclick="promptRescue('${m.playerId}', '${m.name}')">救助</button>`
+      : '';
+
+    chip.innerHTML = `
+      <div class="${m.isOnline ? 'online-dot' : 'offline-dot'}"></div>
+      <div style="flex: 1; font-size: 0.75rem;">
+        <div style="font-weight: 700; color: #fff;">${m.name} <span style="color: var(--accent-gold);">[${m.role}]</span></div>
+        <div style="color: ${m.status === 'DEAD' ? '#f87171' : 'var(--text-muted)'};">
+          ${m.status === 'DEAD' ? '💀 死亡状態' : `HP: ${m.hp} | 🍖${m.hunger} 💧${m.thirst}`}
+        </div>
+      </div>
+      ${rescueBtnHtml}
+    `;
+    teamPanel.appendChild(chip);
+  });
+
+  // 4. 個人インベントリの描画
+  renderInventory();
+
+  // 5. 共有倉庫の描画
+  renderSharedInventory();
+
+  // 6. クラフトリストの描画
+  renderCraftList();
+
+  // 7. 拠点設備の描画
+  renderBaseBuildings();
+
+  // 8. チャット＆ログの描画
+  renderMessages();
+  renderLogs();
+
+  // 9. 脱出可能判定
+  checkEscapeFeasibility();
+}
+
+function updateGauge(textId, barId, val) {
+  val = Math.max(0, Math.min(100, Math.round(val)));
+  document.getElementById(textId).textContent = val + ' / 100';
+  document.getElementById(barId).style.width = val + '%';
+}
+
+// ==========================================
+// 各タブの描画処理
+// ==========================================
+
+function renderInventory() {
+  var grid = document.getElementById('inventoryGrid');
+  grid.innerHTML = '';
+
+  if (State.personalInventory.length === 0) {
+    grid.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 10px;">持ち物はありません。探索で資源を集めましょう。</div>';
+    return;
+  }
+
+  State.personalInventory.forEach(function(item) {
+    var def = State.itemsMap[item.itemId] || { name: item.itemId, category: 'item' };
+    var icon = ITEM_ICONS[item.itemId] || '📦';
+    var isUsable = (def.category === 'food' || def.category === 'drink' || def.category === 'medical');
+
+    var slot = document.createElement('div');
+    slot.className = 'item-slot';
+    slot.innerHTML = `
+      <div class="item-icon">${icon}</div>
+      <div class="item-name" title="${def.name}">${def.name}</div>
+      <div class="item-qty">×${item.quantity}</div>
+      <div class="item-slot-actions">
+        ${isUsable ? `<button class="btn btn-sm btn-primary" onclick="executeUseItem('${item.itemId}')" title="使用">使用</button>` : ''}
+        <button class="btn btn-sm" onclick="executeTransfer('deposit', '${item.itemId}', 1)" title="倉庫へ">預ける</button>
+        <button class="btn btn-sm" onclick="promptGiveItem('${item.itemId}', '${def.name}', ${item.quantity})" title="仲間に渡す">渡す</button>
+      </div>
+    `;
+    grid.appendChild(slot);
+  });
+}
+
+function renderSharedInventory() {
+  var grid = document.getElementById('sharedGrid');
+  grid.innerHTML = '';
+
+  if (State.sharedInventory.length === 0) {
+    grid.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 10px;">共有倉庫は空です。</div>';
+    return;
+  }
+
+  State.sharedInventory.forEach(function(item) {
+    var def = State.itemsMap[item.itemId] || { name: item.itemId };
+    var icon = ITEM_ICONS[item.itemId] || '📦';
+
+    var slot = document.createElement('div');
+    slot.className = 'item-slot';
+    slot.innerHTML = `
+      <div class="item-icon">${icon}</div>
+      <div class="item-name" title="${def.name}">${def.name}</div>
+      <div class="item-qty">×${item.quantity}</div>
+      <div class="item-slot-actions">
+        <button class="btn btn-sm btn-gold" onclick="executeTransfer('withdraw', '${item.itemId}', 1)">1個引出</button>
+        ${item.quantity >= 5 ? `<button class="btn btn-sm" onclick="executeTransfer('withdraw', '${item.itemId}', 5)">5個</button>` : ''}
+      </div>
+    `;
+    grid.appendChild(slot);
+  });
+}
+
+function getMaterialStock(itemId, useShared) {
+  var targetList = useShared ? State.sharedInventory : State.personalInventory;
+  for (var i = 0; i < targetList.length; i++) {
+    if (targetList[i].itemId === itemId) return targetList[i].quantity;
+  }
+  return 0;
+}
+
+function renderCraftList() {
+  var list = document.getElementById('craftList');
+  list.innerHTML = '';
+  var useShared = document.getElementById('chkUseSharedCraft').checked;
+  var isCraftsman = (State.player.role === 'CRAFTSMAN');
+
+  var recipes = [
+    { id: 'rec_axe', name: '石の斧', result: 'stone_axe', wood: 3, stone: 2, other: [], desc: '木材収集効率UP' },
+    { id: 'rec_spear', name: '槍', result: 'spear', wood: 3, stone: 1, other: [{ id: 'rope', qty: 1 }], desc: '野獣撃退・狩猟UP' },
+    { id: 'rec_rod', name: '釣り竿', result: 'fishing_rod', wood: 2, stone: 0, other: [{ id: 'rope', qty: 2 }], desc: '魚の獲得確率UP' },
+    { id: 'rec_torch', name: 'たいまつ', result: 'torch', wood: 1, stone: 0, other: [{ id: 'cloth', qty: 1 }], desc: '洞窟事故防止' },
+    { id: 'rec_rope', name: 'ロープ', result: 'rope', wood: 0, stone: 0, other: [{ id: 'herb', qty: 2 }], desc: 'クラフト・建築用の綱' },
+    { id: 'rec_cloth', name: '布', result: 'cloth', wood: 0, stone: 0, other: [{ id: 'herb', qty: 3 }], desc: 'テント・いかだ用の布' },
+    { id: 'rec_raft', name: 'いかだの骨組み', result: 'raft_piece', wood: 10, stone: 5, other: [{ id: 'rope', qty: 5 }, { id: 'cloth', qty: 3 }], desc: '脱出用いかだパーツ' }
+  ];
+
+  recipes.forEach(function(rec) {
+    var reqWood = (isCraftsman && rec.wood > 1) ? Math.max(1, Math.floor(rec.wood * 0.8)) : rec.wood;
+    var reqStone = (isCraftsman && rec.stone > 1) ? Math.max(1, Math.floor(rec.stone * 0.8)) : rec.stone;
+
+    var stockWood = getMaterialStock('wood', useShared);
+    var stockStone = getMaterialStock('stone', useShared);
+
+    var canCraft = true;
+    var tagsHtml = '';
+
+    if (reqWood > 0) {
+      var ok = stockWood >= reqWood;
+      if (!ok) canCraft = false;
+      tagsHtml += `<span class="req-tag ${ok ? 'ok' : 'missing'}">木材: ${stockWood}/${reqWood}</span>`;
+    }
+    if (reqStone > 0) {
+      var ok2 = stockStone >= reqStone;
+      if (!ok2) canCraft = false;
+      tagsHtml += `<span class="req-tag ${ok2 ? 'ok' : 'missing'}">石: ${stockStone}/${reqStone}</span>`;
+    }
+
+    rec.other.forEach(function(ot) {
+      var reqOtQty = (isCraftsman && ot.qty > 1) ? Math.max(1, Math.floor(ot.qty * 0.8)) : ot.qty;
+      var stockOt = getMaterialStock(ot.id, useShared);
+      var okOt = stockOt >= reqOtQty;
+      if (!okOt) canCraft = false;
+      var otName = (State.itemsMap[ot.id] || {}).name || ot.id;
+      tagsHtml += `<span class="req-tag ${okOt ? 'ok' : 'missing'}">${otName}: ${stockOt}/${reqOtQty}</span>`;
+    });
+
+    var card = document.createElement('div');
+    card.className = 'recipe-card' + (canCraft ? ' craftable' : '');
+    card.innerHTML = `
+      <div class="recipe-info">
+        <div class="recipe-title">
+          <span>${ITEM_ICONS[rec.result] || '⚒️'}</span>
+          <span>${rec.name}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${rec.desc}</span>
+        </div>
+        <div class="recipe-reqs">${tagsHtml}</div>
+      </div>
+      <button class="btn btn-sm ${canCraft ? 'btn-primary' : ''}" ${canCraft ? '' : 'disabled'} onclick="executeCraft('${rec.id}')">
+        クラフト
+      </button>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderBaseBuildings() {
+  var list = document.getElementById('baseBuildingList');
+  list.innerHTML = '';
+  var isCraftsman = (State.player.role === 'CRAFTSMAN');
+
+  var buildingsConfig = [
+    { type: 'campfire', name: '焚き火', wood: 5, stone: 3, other: [], maxLv: 1 },
+    { type: 'tent', name: 'テント', wood: 8, stone: 0, other: [{ id: 'cloth', qty: 2 }, { id: 'rope', qty: 2 }], maxLv: 1 },
+    { type: 'cabin', name: '木の小屋', wood: 20, stone: 10, other: [{ id: 'rope', qty: 4 }], maxLv: 1 },
+    { type: 'water_collector', name: '貯水設備', wood: 10, stone: 5, other: [{ id: 'cloth', qty: 2 }], maxLv: 1 },
+    { type: 'raft', name: '脱出用いかだ', wood: 15, stone: 5, other: [{ id: 'rope', qty: 5 }], maxLv: 3 }
+  ];
+
+  buildingsConfig.forEach(function(bConf) {
+    var bInfo = BUILDING_INFO[bConf.type] || { name: bConf.name, icon: '⛺', desc: '' };
+    var currentLv = 0;
+    var builtBy = '';
+
+    for (var i = 0; i < State.buildings.length; i++) {
+      if (State.buildings[i].buildingType === bConf.type) {
+        currentLv = State.buildings[i].level;
+        builtBy = State.buildings[i].createdBy;
+        break;
+      }
+    }
+
+    var isMax = (currentLv >= bConf.maxLv);
+    var nextLv = currentLv + 1;
+    var mult = nextLv;
+
+    var reqWood = Math.floor(bConf.wood * mult * (isCraftsman ? 0.8 : 1.0));
+    var reqStone = Math.floor(bConf.stone * mult * (isCraftsman ? 0.8 : 1.0));
+
+    var stockWood = getMaterialStock('wood', true); // 共有倉庫
+    var stockStone = getMaterialStock('stone', true);
+
+    var canBuild = !isMax;
+    var tagsHtml = '';
+
+    if (!isMax) {
+      if (reqWood > 0) {
+        var okW = stockWood >= reqWood;
+        if (!okW) canBuild = false;
+        tagsHtml += `<span class="req-tag ${okW ? 'ok' : 'missing'}">共有木材: ${stockWood}/${reqWood}</span>`;
+      }
+      if (reqStone > 0) {
+        var okS = stockStone >= reqStone;
+        if (!okS) canBuild = false;
+        tagsHtml += `<span class="req-tag ${okS ? 'ok' : 'missing'}">共有石: ${stockStone}/${reqStone}</span>`;
+      }
+      bConf.other.forEach(function(ot) {
+        var reqOt = Math.floor(ot.qty * mult * (isCraftsman ? 0.8 : 1.0));
+        var stockOt = getMaterialStock(ot.id, true);
+        var okOt = stockOt >= reqOt;
+        if (!okOt) canBuild = false;
+        var oName = (State.itemsMap[ot.id] || {}).name || ot.id;
+        tagsHtml += `<span class="req-tag ${okOt ? 'ok' : 'missing'}">共有${oName}: ${stockOt}/${reqOt}</span>`;
+      });
+    }
+
+    var card = document.createElement('div');
+    card.className = 'recipe-card' + (canBuild ? ' craftable' : '');
+    card.innerHTML = `
+      <div class="recipe-info">
+        <div class="recipe-title">
+          <span>${bInfo.icon}</span>
+          <span>${bInfo.name}</span>
+          <span class="island-badge" style="background: ${currentLv > 0 ? 'var(--accent-green)' : '#475569'};">
+            ${currentLv > 0 ? 'Lv.' + currentLv : '未建築'}
+          </span>
+          ${builtBy ? `<span style="font-size: 0.72rem; color: var(--text-muted);">建設: ${builtBy}</span>` : ''}
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${bInfo.desc}</div>
+        ${!isMax ? `<div class="recipe-reqs">${tagsHtml}</div>` : '<div style="font-size: 0.75rem; color: #4ade80; margin-top: 4px;">★ 最大レベルに到達済み</div>'}
+      </div>
+      <div>
+        ${isMax ? '<button class="btn btn-sm" disabled>完成済</button>' : `
+          <button class="btn btn-sm ${canBuild ? 'btn-gold' : ''}" ${canBuild ? '' : 'disabled'} onclick="executeBuild('${bConf.type}')">
+            ${currentLv === 0 ? '建設する' : 'Lvアップ'}
+          </button>
+        `}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderMessages() {
+  var chatBox = document.getElementById('chatMessages');
+  chatBox.innerHTML = '';
+
+  State.messages.forEach(function(msg) {
+    var isMine = (msg.playerId === State.player.playerId);
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
+    bubble.innerHTML = `
+      <div class="chat-meta">
+        <span style="font-weight: 700; color: ${isMine ? 'var(--accent-gold)' : '#90caf9'};">${msg.playerName}</span>
+        <span>${msg.createdAt.substring(11, 16)}</span>
+      </div>
+      <div>${msg.message}</div>
+    `;
+    chatBox.appendChild(bubble);
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function renderLogs() {
+  var logBox = document.getElementById('activityLogs');
+  logBox.innerHTML = '';
+
+  State.logs.forEach(function(lg) {
+    var item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<span class="log-day">${lg.day}日目</span> ${lg.action}`;
+    logBox.appendChild(item);
+  });
+
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function checkEscapeFeasibility() {
+  var raftLv = 0;
+  for (var b = 0; b < State.buildings.length; b++) {
+    if (State.buildings[b].buildingType === 'raft') {
+      raftLv = State.buildings[b].level;
+      break;
+    }
+  }
+
+  var waterStock = getMaterialStock('water', true);
+  var foodStock = getMaterialStock('berry', true) + getMaterialStock('fish', true);
+
+  var btn = document.getElementById('btnEscapeRaft');
+  if (raftLv >= 3 && waterStock >= 10 && foodStock >= 10) {
+    btn.style.display = 'inline-flex';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+// ==========================================
+// ゲームアクション実行ハンドラ
+// ==========================================
+
+function executeExplore(location) {
+  showLoading('探索中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.success();
+        showToast(res.message, 'success');
+        pollState();
+      } else {
+        SoundFx.damage();
+        showToast(res.message || '探索失敗', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .exploreLocation(State.player.playerId, State.token, State.island.island_id, location);
+}
+
+function executeAdvanceTime() {
+  showLoading('時間を進行中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.success();
+        showToast('時間が進みました！', 'success');
+        pollState();
+      } else {
+        showToast(res.message || '時間進行エラー', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .advanceTime(State.player.playerId, State.token, State.island.island_id);
+}
+
+function executeUseItem(itemId) {
+  SoundFx.click();
+  showLoading('使用中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.success();
+        showToast(res.message, 'success');
+        pollState();
+      } else {
+        showToast(res.message || '使用できませんでした', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .useItem(State.player.playerId, State.token, State.island.island_id, itemId);
+}
+
+function executeTransfer(action, itemId, quantity) {
+  SoundFx.click();
+  showLoading('物資を移動中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        pollState();
+      } else {
+        showToast(res.message || '倉庫エラー', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .transferItem(State.player.playerId, State.token, State.island.island_id, action, itemId, quantity);
+}
+
+function executeCraft(recipeId) {
+  SoundFx.click();
+  var useShared = document.getElementById('chkUseSharedCraft').checked;
+  showLoading('クラフト中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.craft();
+        showToast(res.message, 'success');
+        pollState();
+      } else {
+        showToast(res.message || 'クラフト失敗', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .craftItem(State.player.playerId, State.token, State.island.island_id, recipeId, useShared);
+}
+
+function executeBuild(buildingType) {
+  SoundFx.click();
+  showLoading('建築中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.craft();
+        showToast(res.message, 'success');
+        pollState();
+      } else {
+        showToast(res.message || '建築失敗', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .buildStructure(State.player.playerId, State.token, State.island.island_id, buildingType);
+}
+
+function executeSendMessage() {
+  var input = document.getElementById('inputChatMessage');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success) {
+        SoundFx.click();
+        pollState();
+      } else {
+        showToast(res.message || 'チャット送信失敗', 'error');
+      }
+    })
+    .sendMessage(State.player.playerId, State.token, State.island.island_id, text);
+}
+
+function promptGiveItem(itemId, itemName, currentQty) {
+  State.pendingGiveItemId = itemId;
+  var sel = document.getElementById('selectGiveTarget');
+  sel.innerHTML = '';
+
+  var count = 0;
+  State.members.forEach(function(m) {
+    if (m.playerId !== State.player.playerId) {
+      var opt = document.createElement('option');
+      opt.value = m.playerId;
+      opt.textContent = m.name + ' (' + m.role + ')';
+      sel.appendChild(opt);
+      count++;
+    }
+  });
+
+  if (count === 0) {
+    showToast('現在、島に他の生存者がいません', 'info');
+    return;
+  }
+
+  document.getElementById('labelGiveItemName').textContent = itemName + ' を渡す数量 (所持: ' + currentQty + ')';
+  var numInput = document.getElementById('inputGiveQuantity');
+  numInput.value = 1;
+  numInput.max = currentQty;
+  openModal('modalGiveItem');
+}
+
+function promptRescue(targetPlayerId, targetName) {
+  State.pendingRescueTargetId = targetPlayerId;
+  document.getElementById('rescueTargetDesc').textContent =
+    `仲間【${targetName}】が息絶えかけています。薬草または真水を消費して蘇生します。（MEDICは物資なしでもスタミナ消費で蘇生可能）`;
+  openModal('modalRescue');
+}
+
+function showVictory(days) {
+  stopPolling();
+  document.getElementById('victoryDay').textContent = days + ' 日間';
+  showView('viewVictory');
+}
+
+function showGameOver(days) {
+  stopPolling();
+  SoundFx.damage();
+  document.getElementById('gameoverDay').textContent = days + ' 日間';
+  showView('viewGameOver');
+}
+</script>

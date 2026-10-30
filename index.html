@@ -1,0 +1,2609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ISLAND: LAST SURVIVOR</title>
+  <style>
+/* ========================================================
+   ISLAND: LAST SURVIVOR - Dark Fantasy RPG Stylesheet
+   ======================================================== */
+:root {
+  --bg-dark: #070a0f;
+  --bg-panel: #0d141e;
+  --bg-card: #131c2a;
+  --bg-card-hover: #1a273b;
+  --border-color: #26384f;
+  --border-gold: #c6923b;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --accent-gold: #d4af37;
+  --accent-gold-glow: rgba(212, 175, 55, 0.35);
+  --accent-green: #2d6a4f;
+  --accent-green-bright: #40916c;
+  
+  --stat-hp: #e63946;
+  --stat-hunger: #f77f00;
+  --stat-thirst: #00b4d8;
+  --stat-stamina: #2ec4b6;
+
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-family);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-gold);
+}
+
+/* コンテナ */
+.app-container {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* タイトル・ヘッダー */
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #162232 0%, var(--bg-panel) 100%);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.brand-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--accent-gold);
+  text-shadow: 0 0 10px var(--accent-gold-glow);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.btn-icon:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+/* 汎用ボタンスタイル */
+.btn {
+  background: linear-gradient(180deg, #22344a 0%, #172435 100%);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 10px var(--accent-gold-glow);
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #3d8c64 0%, #20533a 100%);
+  border-color: #40916c;
+  color: #ffffff;
+}
+.btn-gold {
+  background: linear-gradient(180deg, #c99839 0%, #87621c 100%);
+  border-color: var(--accent-gold);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.btn-danger {
+  background: linear-gradient(180deg, #c93946 0%, #821f28 100%);
+  border-color: #e63946;
+  color: #ffffff;
+}
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+.btn-block {
+  width: 100%;
+}
+
+/* タイトル画面 */
+.title-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  text-align: center;
+  padding: 24px 16px;
+  background: radial-gradient(circle at center, #132235 0%, var(--bg-dark) 85%);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.title-banner {
+  margin-bottom: 24px;
+}
+.title-main {
+  font-size: 2.3rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.6), 0 4px 10px rgba(0,0,0,0.9);
+}
+.title-sub {
+  font-size: 1rem;
+  color: var(--accent-gold);
+  letter-spacing: 3px;
+  margin-top: 6px;
+  font-weight: 600;
+}
+.title-desc {
+  max-width: 480px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 12px auto 28px;
+  line-height: 1.6;
+}
+.title-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* カード & パネル */
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 8px;
+}
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 役割選択カード */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.role-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.role-card:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+}
+.role-card.selected {
+  border-color: var(--accent-gold);
+  background: #1e2d42;
+  box-shadow: 0 0 12px var(--accent-gold-glow);
+}
+.role-icon {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+.role-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+}
+.role-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+/* フォーム要素 */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.input-text {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-text:focus {
+  border-color: var(--accent-gold);
+}
+
+/* HUD (ステータスバー) */
+.hud-panel {
+  background: linear-gradient(180deg, #121d2b 0%, #0c141e 100%);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.hud-island-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 8px;
+}
+.island-title-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.island-badge {
+  background: var(--accent-green);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.time-period-badge {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.period-morning { background: #3a6073; color: #ffeb3b; }
+.period-noon { background: #e67e22; color: #fff; }
+.period-evening { background: #8e44ad; color: #ffcc80; }
+.period-night { background: #1b263b; color: #90caf9; border: 1px solid #415a77; }
+
+/* ステータスゲージ群 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.stat-box {
+  background: rgba(0,0,0,0.3);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.stat-label-wrap {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.gauge-track {
+  width: 100%;
+  height: 8px;
+  background: #111822;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.gauge-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+.bar-hp { background: linear-gradient(90deg, #c92a2a, var(--stat-hp)); }
+.bar-hunger { background: linear-gradient(90deg, #d9480f, var(--stat-hunger)); }
+.bar-thirst { background: linear-gradient(90deg, #1864ab, var(--stat-thirst)); }
+.bar-stamina { background: linear-gradient(90deg, #099268, var(--stat-stamina)); }
+
+/* 仲間リスト (チームHUD) */
+.team-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.team-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  flex: 1 1 180px;
+}
+.team-chip.is-dead {
+  border-color: #e63946;
+  background: rgba(230, 57, 70, 0.15);
+}
+.online-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
+}
+.offline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+/* メインタブナビゲーション */
+.nav-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+}
+.nav-tab {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.nav-tab:hover {
+  color: #fff;
+  border-color: var(--accent-gold);
+}
+.nav-tab.active {
+  background: linear-gradient(180deg, #23354b 0%, var(--bg-card) 100%);
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 10px var(--accent-gold-glow);
+}
+
+/* エリアカード（探索） */
+.location-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.location-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.location-card:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.location-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.location-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.location-rewards {
+  font-size: 0.75rem;
+  background: rgba(0,0,0,0.3);
+  padding: 6px 10px;
+  border-radius: 4px;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+/* アイテムグリッド (インベントリ・倉庫) */
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.item-slot {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+  position: relative;
+  transition: all 0.2s;
+}
+.item-slot:hover {
+  border-color: var(--accent-gold);
+  background: var(--bg-card-hover);
+}
+.item-icon {
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+.item-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.item-qty {
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  font-weight: 700;
+  margin-top: 2px;
+}
+.item-slot-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+/* クラフト＆建築リスト */
+.recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.recipe-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.recipe-card.craftable {
+  border-color: var(--accent-green-bright);
+}
+.recipe-info {
+  flex: 1 1 200px;
+}
+.recipe-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.recipe-reqs {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.req-tag {
+  display: inline-block;
+  background: rgba(0,0,0,0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.req-tag.ok {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+.req-tag.missing {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* チャット＆ログコンテナ */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 380px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.chat-messages {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-bubble {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+  max-width: 85%;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+.chat-bubble.mine {
+  align-self: flex-end;
+  background: #17324d;
+  border-color: #2b5680;
+}
+.chat-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  display: flex;
+  gap: 8px;
+}
+.chat-input-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border-color);
+}
+
+/* 活動履歴ログ */
+.log-list {
+  max-height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.log-item {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  border-left: 3px solid var(--accent-gold);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.4;
+}
+.log-day {
+  color: var(--accent-gold);
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+/* 実績バッジ */
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.ach-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 0 10px var(--accent-gold-glow);
+}
+.ach-icon {
+  font-size: 1.6rem;
+}
+.ach-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+}
+.ach-date {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* モーダル */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.8), 0 0 20px var(--accent-gold-glow);
+  transform: translateY(20px);
+  transition: transform 0.2s ease;
+}
+.modal-overlay.active .modal-content {
+  transform: translateY(0);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 8px;
+}
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.modal-close:hover {
+  color: #fff;
+}
+
+/* トースト通知 */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  background: #192738;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-gold);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  pointer-events: auto;
+  animation: slideIn 0.3s ease;
+  max-width: 320px;
+}
+.toast.success { border-left-color: #4ade80; }
+.toast.error { border-left-color: #f87171; }
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* 通信中ローディングオーバーレイ */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(5, 8, 12, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.loading-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(212, 175, 55, 0.2);
+  border-top-color: var(--accent-gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  margin-top: 14px;
+  color: var(--accent-gold);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* リザルト画面（クリア勝利＆ゲームオーバー） */
+#viewVictory {
+  text-align: center;
+  padding: 36px 20px;
+  background: radial-gradient(circle at center, #1b382b 0%, var(--bg-panel) 80%);
+  border: 2px solid var(--accent-gold);
+  box-shadow: 0 0 30px var(--accent-gold-glow);
+}
+.victory-icon {
+  font-size: 4rem;
+  margin-bottom: 12px;
+  animation: pulseGold 2s infinite ease-in-out;
+}
+.victory-title {
+  color: var(--accent-gold);
+  font-size: 2.1rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+  text-shadow: 0 0 15px var(--accent-gold-glow);
+  letter-spacing: 2px;
+}
+.victory-desc {
+  max-width: 520px;
+  margin: 0 auto 20px;
+  color: var(--text-main);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+.victory-stat-card {
+  background: rgba(0,0,0,0.5);
+  padding: 16px;
+  border-radius: 8px;
+  max-width: 380px;
+  margin: 0 auto 24px;
+  border: 1px solid var(--border-gold);
+}
+
+#viewGameOver {
+  text-align: center;
+  padding: 36px 20px;
+  background: radial-gradient(circle at center, #350f14 0%, var(--bg-panel) 80%);
+  border: 2px solid #e63946;
+  box-shadow: 0 0 30px rgba(230,57,70,0.3);
+}
+.gameover-icon {
+  font-size: 4rem;
+  margin-bottom: 12px;
+}
+.gameover-title {
+  color: #e63946;
+  font-size: 2.1rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+  text-shadow: 0 0 15px rgba(230,57,70,0.5);
+  letter-spacing: 2px;
+}
+.gameover-desc {
+  max-width: 520px;
+  margin: 0 auto 20px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+.gameover-stat-card {
+  background: rgba(0,0,0,0.5);
+  padding: 16px;
+  border-radius: 8px;
+  max-width: 380px;
+  margin: 0 auto 24px;
+  border: 1px solid rgba(230,57,70,0.4);
+}
+
+@keyframes pulseGold {
+  0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 20px rgba(212,175,55,0.8)); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(212,175,55,0.4)); }
+}
+
+/* レスポンシブ調整 */
+@media (max-width: 600px) {
+  .app-container {
+    padding: 8px;
+  }
+  .title-main {
+    font-size: 1.8rem;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .role-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .nav-tab {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}
+  </style>
+</head>
+<body>
+
+  <!-- 通信中ローディングオーバーレイ -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loadingText" class="loading-text">島と通信中...</div>
+  </div>
+
+  <!-- トースト通知コンテナ -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="app-container">
+
+    <!-- ヘッダー（タイトルバー） -->
+    <header class="game-header">
+      <div class="brand-title">
+        <span>🏝️</span> ISLAND: LAST SURVIVOR
+      </div>
+      <div class="header-tools">
+        <button id="btnSoundToggle" class="btn-icon" title="効果音オン/オフ">🔊</button>
+        <button id="btnHelp" class="btn-icon" title="遊び方">❓</button>
+        <span id="playerProfileTag" style="font-size: 0.8rem; color: var(--accent-gold); display: none;"></span>
+      </div>
+    </header>
+
+    <!-- ============================================== -->
+    <!-- 画面1: タイトル画面                            -->
+    <!-- ============================================== -->
+    <section id="viewTitle" class="title-view">
+      <div class="title-banner">
+        <h1 class="title-main">ISLAND</h1>
+        <div class="title-sub">LAST SURVIVOR</div>
+      </div>
+      <p class="title-desc">
+        突如海難事故に見舞われ、謎の孤島に漂着した生存者たち。<br>
+        飢えと渇き、猛獣や嵐の恐怖が襲いかかる中、仲間と協力して拠点を築き、<br>
+        30日間の過酷なサバイバルを生き延びて、脱出用いかだを完成させよ。
+      </p>
+
+      <div class="title-actions">
+        <button id="btnTitleCreateIsland" class="btn btn-primary btn-block">
+          <span>⛺</span> 新しい島を作る（ホスト）
+        </button>
+        <button id="btnTitleJoinIsland" class="btn btn-gold btn-block">
+          <span>👥</span> フレンドの島に参加する
+        </button>
+        <button id="btnTitleResumeIsland" class="btn btn-block" style="display: none;">
+          <span>🔄</span> 自分の島に戻る
+        </button>
+        <button id="btnTitleHowToPlay" class="btn btn-block">
+          <span>📜</span> 遊び方・生存の手引き
+        </button>
+      </div>
+
+      <div id="sessionStatusText" style="margin-top: 20px; font-size: 0.75rem; color: var(--text-muted);">
+        プレイヤー情報確認中...
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 画面2: ロビー画面（出発前待機）                -->
+    <!-- ============================================== -->
+    <section id="viewLobby" class="card" style="display: none;">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🏕️</span> <span id="lobbyIslandName">島名</span> - 探索準備ロビー
+        </div>
+        <button id="btnLeaveLobby" class="btn btn-sm btn-danger">島から退出</button>
+      </div>
+
+      <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">フレンド招待コード:</span>
+            <span id="lobbyInviteCode" style="font-size: 1.4rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 2px; margin-left: 8px;">------</span>
+          </div>
+          <button id="btnCopyInviteCode" class="btn btn-sm btn-gold">📋 コードをコピー</button>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+          ※最大4人まで参加可能。招待コードを仲間に伝えて合流してもらおう！
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-bottom: 8px;">
+        <span>👥</span> 合流した生存者 (<span id="lobbyMemberCount">1</span>/4)
+      </div>
+      <div id="lobbyMemberList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+        <!-- メンバー一覧が動的に挿入される -->
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button id="btnStartAdventure" class="btn btn-primary btn-block" style="font-size: 1.05rem;">
+          <span>🌲</span> 島へ踏み出す（ゲーム開始）
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 画面3: メインゲーム画面                        -->
+    <!-- ============================================== -->
+    <section id="viewGame" style="display: none;">
+
+      <!-- 共通HUDパネル -->
+      <div class="hud-panel">
+        <div class="hud-island-info">
+          <div class="island-title-box">
+            <span class="island-badge" id="hudIslandName">孤島</span>
+            <span style="font-weight: 700; color: #fff;">生存 <span id="hudDay" style="color: var(--accent-gold); font-size: 1.1rem;">1</span> 日目</span>
+            <span id="hudTimePeriod" class="time-period-badge period-morning">朝</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnAdvanceTime" class="btn btn-sm btn-gold" title="時間を進めて休息をとる">
+              <span>⏳</span> 時間を進める / 休息
+            </button>
+            <button id="btnEscapeRaft" class="btn btn-sm btn-primary" style="display: none;" title="島から脱出する">
+              <span>⛵</span> 脱出する！
+            </button>
+          </div>
+        </div>
+
+        <!-- 自分のステータスゲージ -->
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label-wrap">
+              <span style="color: var(--stat-hp);">❤️ HP</span>
+              <span id="valHp">100 / 100</span>
+            </div>
+            <div class="gauge-track">
+              <div id="gaugeHp" class="gauge-bar bar-hp" style="width: 100%;"></div>
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label-wrap">
+              <span style="color: var(--stat-hunger);">🍖 空腹度</span>
+              <span id="valHunger">100 / 100</span>
+            </div>
+            <div class="gauge-track">
+              <div id="gaugeHunger" class="gauge-bar bar-hunger" style="width: 100%;"></div>
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label-wrap">
+              <span style="color: var(--stat-thirst);">💧 水分</span>
+              <span id="valThirst">100 / 100</span>
+            </div>
+            <div class="gauge-track">
+              <div id="gaugeThirst" class="gauge-bar bar-thirst" style="width: 100%;"></div>
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label-wrap">
+              <span style="color: var(--stat-stamina);">⚡ スタミナ</span>
+              <span id="valStamina">100 / 100</span>
+            </div>
+            <div class="gauge-track">
+              <div id="gaugeStamina" class="gauge-bar bar-stamina" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 仲間ステータスHUD -->
+        <div class="team-panel" id="teamPanel">
+          <!-- 仲間のミニステータスが動的挿入 -->
+        </div>
+      </div>
+
+      <!-- メインタブナビゲーション -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="tabExplore">🌲 探索</button>
+        <button class="nav-tab" data-tab="tabInventory">🎒 持ち物</button>
+        <button class="nav-tab" data-tab="tabShared">📦 共有倉庫</button>
+        <button class="nav-tab" data-tab="tabCraft">⚒️ クラフト</button>
+        <button class="nav-tab" data-tab="tabBase">⛺ 拠点設備</button>
+        <button class="nav-tab" data-tab="tabChat">💬 チャット＆ログ</button>
+        <button class="nav-tab" data-tab="tabAchievements">🏆 実績</button>
+      </nav>
+
+      <!-- タブ1: 探索 -->
+      <div id="tabExplore" class="tab-content card">
+        <div class="card-header">
+          <div class="card-title"><span>🗺️</span> 未知の領域を探索する</div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">行動ごとにスタミナを消費します</span>
+        </div>
+        <div class="location-grid">
+          <!-- 森 -->
+          <div class="location-card">
+            <div>
+              <div class="location-name"><span>🌲</span> 深き密林</div>
+              <p class="location-desc">鬱蒼と茂る樹海。木材や野いちご、傷を癒やす薬草が見つかるが、野獣の気配も漂う。</p>
+              <div class="location-rewards">主な収穫: 木材, 木の実, 薬草 / 遭遇リスク: 野生動物</div>
+            </div>
+            <button class="btn btn-primary btn-block btn-explore" data-location="forest">
+              森林を探索する (⚡スタミナ消費)
+            </button>
+          </div>
+          <!-- 海岸 -->
+          <div class="location-card">
+            <div>
+              <div class="location-name"><span>🏖️</span> 荒波の海岸</div>
+              <p class="location-desc">打ち寄せる白波。漂着した流木や真水の水たまり、貴重な魚や救援物資のトランクが見つかる。</p>
+              <div class="location-rewards">主な収穫: 流木, 魚, 真水, 漂着物(布・ロープ)</div>
+            </div>
+            <button class="btn btn-primary btn-block btn-explore" data-location="beach">
+              海岸を探索する (⚡スタミナ消費)
+            </button>
+          </div>
+          <!-- 洞窟 -->
+          <div class="location-card">
+            <div>
+              <div class="location-name"><span>🦇</span> 闇の洞窟</div>
+              <p class="location-desc">不気味に開口する鍾乳洞。頑丈な石や脱出に不可欠な鉄鉱石が眠るが、落石事故の危険が高い。</p>
+              <div class="location-rewards">主な収穫: 頑丈な石, 鉄鉱石 / リスク: 落石による大ダメージ</div>
+            </div>
+            <button class="btn btn-primary btn-block btn-explore" data-location="cave">
+              洞窟を探索する (⚡スタミナ消費)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブ2: 個人持ち物 -->
+      <div id="tabInventory" class="tab-content card" style="display: none;">
+        <div class="card-header">
+          <div class="card-title"><span>🎒</span> 個人インベントリ</div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">所持アイテムを使用、または倉庫に預けられます</span>
+        </div>
+        <div id="inventoryGrid" class="item-grid">
+          <!-- 個人アイテム一覧 -->
+        </div>
+      </div>
+
+      <!-- タブ3: 共有倉庫 -->
+      <div id="tabShared" class="tab-content card" style="display: none;">
+        <div class="card-header">
+          <div class="card-title"><span>📦</span> 島の共有物資倉庫</div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">全員で備蓄を共有。建築や脱出用物資を管理します</span>
+        </div>
+        <div id="sharedGrid" class="item-grid">
+          <!-- 共有倉庫アイテム一覧 -->
+        </div>
+      </div>
+
+      <!-- タブ4: クラフト -->
+      <div id="tabCraft" class="tab-content card" style="display: none;">
+        <div class="card-header">
+          <div class="card-title"><span>⚒️</span> 道具・資材のクラフト</div>
+          <div style="font-size: 0.8rem;">
+            <label style="cursor: pointer; color: var(--accent-gold);">
+              <input type="checkbox" id="chkUseSharedCraft" checked> 共有倉庫の素材を優先使用
+            </label>
+          </div>
+        </div>
+        <div id="craftList" class="recipe-list">
+          <!-- クラフトレシピ一覧 -->
+        </div>
+      </div>
+
+      <!-- タブ5: 拠点設備 -->
+      <div id="tabBase" class="tab-content card" style="display: none;">
+        <div class="card-header">
+          <div class="card-title"><span>⛺</span> キャンプ・拠点設備</div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">設備を建設すると、島全体の生存能力が向上します</span>
+        </div>
+        <div id="baseBuildingList" class="recipe-list">
+          <!-- 建築物一覧 -->
+        </div>
+      </div>
+
+      <!-- タブ6: チャット＆活動履歴 -->
+      <div id="tabChat" class="tab-content card" style="display: none;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+          <div>
+            <div class="card-title" style="margin-bottom: 8px;"><span>💬</span> 仲間との無線チャット</div>
+            <div class="chat-container">
+              <div id="chatMessages" class="chat-messages">
+                <!-- チャット吹き出し -->
+              </div>
+              <div class="chat-input-bar">
+                <input type="text" id="inputChatMessage" class="input-text" placeholder="メッセージを入力（200文字以内）..." maxlength="200">
+                <button id="btnSendChatMessage" class="btn btn-sm btn-primary">送信</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom: 8px;"><span>📜</span> 島の活動記録ログ</div>
+            <div id="activityLogs" class="log-list">
+              <!-- 活動ログ -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タブ7: 実績 -->
+      <div id="tabAchievements" class="tab-content card" style="display: none;">
+        <div class="card-header">
+          <div class="card-title"><span>🏆</span> 生存者の栄誉（実績一覧）</div>
+          <span style="font-size: 0.8rem; color: var(--accent-gold);">過酷なサバイバルを乗り越えた証</span>
+        </div>
+        <div id="achievementList" class="achievement-grid">
+          <!-- 実績一覧 -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 画面4: クリア（勝利）画面                      -->
+    <!-- ============================================== -->
+    <section id="viewVictory" class="card" style="display: none;">
+      <div class="victory-icon">⛵✨</div>
+      <h2 class="victory-title">
+        脱出成功！ 生存者たちの凱旋
+      </h2>
+      <p class="victory-desc">
+        幾多の飢えと嵐、危険を仲間と共に乗り越え、ついにいかだを完成させた生存者たち。<br>
+        彼らは大海原へと船出を果たし、無事文明社会へと救助された！<br>
+        あなたの名前は、伝説のサバイバーとして語り継がれるだろう。
+      </p>
+      <div class="victory-stat-card">
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 6px;">到達生存日数</div>
+        <div id="victoryDay" style="font-size: 2.2rem; font-weight: 800; color: #fff;">- 日間</div>
+      </div>
+      <button id="btnVictoryReturnTitle" class="btn btn-gold" style="font-size: 1.05rem; padding: 12px 28px;">
+        タイトル画面に戻る
+      </button>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- 画面5: ゲームオーバー（全滅）画面              -->
+    <!-- ============================================== -->
+    <section id="viewGameOver" class="card" style="display: none;">
+      <div class="gameover-icon">💀⛈️</div>
+      <h2 class="gameover-title">
+        全滅……過酷な島に呑まれた
+      </h2>
+      <p class="gameover-desc">
+        激しい飢餓、渇き、そして荒れ狂う自然の前に力尽き、すべての生存者の息の根が止まった。<br>
+        この島を訪れる次の漂着者たちは、あなた方の遺品を見つけることになるだろう……
+      </p>
+      <div class="gameover-stat-card">
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 6px;">最終生存日数</div>
+        <div id="gameoverDay" style="font-size: 2.2rem; font-weight: 800; color: #fff;">- 日間</div>
+      </div>
+      <button id="btnGameoverReturnTitle" class="btn btn-danger" style="font-size: 1.05rem; padding: 12px 28px;">
+        タイトル画面に戻る
+      </button>
+    </section>
+
+  </div><!-- /app-container -->
+
+  <!-- ============================================== -->
+  <!-- モーダル群                                     -->
+  <!-- ============================================== -->
+
+  <!-- 1. プレイヤー登録モーダル -->
+  <div id="modalRegister" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">生存者の登録</div>
+        <button class="modal-close" data-close="modalRegister">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regPlayerName">プレイヤー名 (名前)</label>
+        <input type="text" id="regPlayerName" class="input-text" placeholder="例: ロビンソン" maxlength="12">
+      </div>
+      <div class="form-group">
+        <label class="form-label">専門役割 (Role) を選択</label>
+        <div class="role-grid">
+          <div class="role-card selected" data-role="EXPLORER">
+            <div class="role-icon">🧭</div>
+            <div class="role-name">EXPLORER</div>
+            <div class="role-desc">探索スタミナ消費-30%、レア素材発見率UP</div>
+          </div>
+          <div class="role-card" data-role="HUNTER">
+            <div class="role-icon">🏹</div>
+            <div class="role-name">HUNTER</div>
+            <div class="role-desc">食料収集量2倍、狩猟・猛獣遭遇で優位</div>
+          </div>
+          <div class="role-card" data-role="CRAFTSMAN">
+            <div class="role-icon">🔨</div>
+            <div class="role-name">CRAFTSMAN</div>
+            <div class="role-desc">クラフト＆建築素材20%軽減、効率UP</div>
+          </div>
+          <div class="role-card" data-role="MEDIC">
+            <div class="role-icon">⚕️</div>
+            <div class="role-name">MEDIC</div>
+            <div class="role-desc">回復効果+50%、瀕死の仲間を迅速蘇生</div>
+          </div>
+        </div>
+      </div>
+      <button id="btnSubmitRegister" class="btn btn-primary btn-block">この設定で生存開始</button>
+    </div>
+  </div>
+
+  <!-- 2. 新しい島を作るモーダル -->
+  <div id="modalCreateIsland" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">新しい島を開拓する</div>
+        <button class="modal-close" data-close="modalCreateIsland">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="inputCreateIslandName">島の名称</label>
+        <input type="text" id="inputCreateIslandName" class="input-text" placeholder="例: ドクロ島, アトランティス" maxlength="15">
+      </div>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+        あなたがホストとなり、一意の招待コードが発行されます。フレンドを招待して最大4人で協力プレイが可能です。
+      </p>
+      <button id="btnSubmitCreateIsland" class="btn btn-primary btn-block">島を作成する</button>
+    </div>
+  </div>
+
+  <!-- 3. フレンドの島に参加するモーダル -->
+  <div id="modalJoinIsland" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">フレンドの島に参加</div>
+        <button class="modal-close" data-close="modalJoinIsland">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="inputJoinInviteCode">6桁の招待コード</label>
+        <input type="text" id="inputJoinInviteCode" class="input-text" placeholder="例: 7K9P2X" maxlength="8" style="text-transform: uppercase; font-size: 1.2rem; letter-spacing: 3px; text-align: center;">
+      </div>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+        ホストから受け取った招待コードを入力してください。島が満員（4人）の場合は参加できません。
+      </p>
+      <button id="btnSubmitJoinIsland" class="btn btn-gold btn-block">島に参加する</button>
+    </div>
+  </div>
+
+  <!-- 4. アイテム譲渡モーダル -->
+  <div id="modalGiveItem" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">仲間にアイテムを手渡す</div>
+        <button class="modal-close" data-close="modalGiveItem">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">渡す相手を選択</label>
+        <select id="selectGiveTarget" class="input-text" style="background: var(--bg-dark);">
+          <!-- メンバー選択肢 -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="labelGiveItemName">渡す数量</label>
+        <input type="number" id="inputGiveQuantity" class="input-text" value="1" min="1" max="99">
+      </div>
+      <button id="btnSubmitGiveItem" class="btn btn-primary btn-block">手渡す</button>
+    </div>
+  </div>
+
+  <!-- 5. 仲間救助モーダル -->
+  <div id="modalRescue" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #4ade80;">瀕死の仲間を救助する</div>
+        <button class="modal-close" data-close="modalRescue">&times;</button>
+      </div>
+      <p id="rescueTargetDesc" style="font-size: 0.9rem; margin-bottom: 14px; line-height: 1.5;">
+        仲間が力尽きて倒れています。薬草または真水を消費して蘇生します。（MEDICは物資なしでもスタミナで蘇生可能）
+      </p>
+      <button id="btnSubmitRescue" class="btn btn-primary btn-block">救助を実行する</button>
+    </div>
+  </div>
+
+  <!-- 6. 遊び方・手引きモーダル -->
+  <div id="modalHowToPlay" class="modal-overlay">
+    <div class="modal-content" style="max-width: 520px; max-height: 80vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div class="modal-title">生存の手引き（遊び方）</div>
+        <button class="modal-close" data-close="modalHowToPlay">&times;</button>
+      </div>
+      <div style="font-size: 0.85rem; line-height: 1.6; color: var(--text-main); display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <strong style="color: var(--accent-gold);">【ゲームの目標】</strong><br>
+          仲間と協力して島を開拓し、<strong>脱出用いかだを完成させて島から脱出する</strong>か、または<strong>30日間過酷な環境を生き延びる</strong>ことです。
+        </div>
+        <div>
+          <strong style="color: var(--stat-hp);">【サバイバルステータス】</strong><br>
+          ・<strong>HP</strong>: 0になると死亡します。仲間の救助が必要です。<br>
+          ・<strong>空腹度・水分</strong>: 時間が経過すると減少します。0になるとHPが急速に減ります。<br>
+          ・<strong>スタミナ</strong>: 探索や行動で消費。休憩や拠点設備で回復します。
+        </div>
+        <div>
+          <strong style="color: var(--accent-gold);">【時間の進行と環境】</strong><br>
+          島全体で「朝・昼・夕・夜」と日数が共有されます。<br>
+          夜間は焚き火がないと寒さでダメージを受けます。<br>
+          暴風雨などの突発イベントにも注意してください。
+        </div>
+        <div>
+          <strong style="color: #4ade80);">【協力プレイの鍵】</strong><br>
+          探索で手に入れた素材は「共有倉庫」に預けることで全員でクラフトや建築に活用できます。<br>
+          役割（探索・狩人・職人・医師）ごとの得意分野を活かして協力しましょう！
+        </div>
+      </div>
+      <div style="margin-top: 18px;">
+        <button class="btn btn-gold btn-block" data-close="modalHowToPlay">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- クライアントスクリプト内蔵（読み込みエラー防止） -->
+  <script>
+/**
+ * ISLAND: LAST SURVIVOR - Client Script
+ */
+
+var State = {
+  player: null,
+  token: null,
+  island: null,
+  members: [],
+  personalInventory: [],
+  sharedInventory: [],
+  buildings: [],
+  messages: [],
+  logs: [],
+  itemsMap: {},
+  soundEnabled: true,
+  pollingTimer: null,
+  isBusy: false,
+  selectedRole: 'EXPLORER',
+  pendingGiveItemId: null,
+  pendingRescueTargetId: null
+};
+
+// 安全な認証・識別子ゲッター関数（未定義・不一致を完全防止）
+function getPlayerId() {
+  if (State.player) {
+    if (State.player.playerId) return State.player.playerId;
+    if (State.player.player_id) return State.player.player_id;
+  }
+  return localStorage.getItem('island_player_id') || '';
+}
+
+function getAuthToken() {
+  if (State.token) return State.token;
+  return localStorage.getItem('island_auth_token') || '';
+}
+
+function getIslandId() {
+  if (State.island) {
+    if (State.island.island_id) return State.island.island_id;
+    if (State.island.islandId) return State.island.islandId;
+  }
+  return '';
+}
+
+var ITEM_ICONS = {
+  wood: '🪵',
+  stone: '🪨',
+  berry: '🍓',
+  water: '💧',
+  fish: '🐟',
+  herb: '🌿',
+  iron_ore: '⛏️',
+  rope: '🪢',
+  cloth: '🧶',
+  stone_axe: '🪓',
+  spear: '🗡️',
+  fishing_rod: '🎣',
+  torch: '🔥',
+  raft_piece: '⛵'
+};
+
+var BUILDING_INFO = {
+  campfire: { name: '焚き火', icon: '🔥', desc: '夜の寒さと猛獣の被害を抑え、スタミナを維持する。' },
+  tent: { name: 'テント', icon: '⛺', desc: '休息時のスタミナ回復量を+15上昇させる。' },
+  cabin: { name: '木の小屋', icon: '🛖', desc: '暴風雨の被害を完全に防ぎ、スタミナ回復量を大幅UP。' },
+  water_collector: { name: '貯水設備', icon: '🪣', desc: '朝を迎えるたび、きれいな水×4を共有倉庫に蓄える。' },
+  raft: { name: '脱出用いかだ', icon: '⛵', desc: 'Lv.3まで建造し、水と食料を備蓄することで島から脱出可能！' }
+};
+
+var SoundFx = {
+  ctx: null,
+  init: function() {
+    if (!this.ctx) {
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  },
+  playTone: function(freq, type, duration, gainVal) {
+    if (!State.soundEnabled) return;
+    try {
+      this.init();
+      if (!this.ctx) return;
+      var osc = this.ctx.createOscillator();
+      var gain = this.ctx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      gain.gain.setValueAtTime(gainVal || 0.1, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    } catch(e) {}
+  },
+  click: function() {
+    this.playTone(480, 'triangle', 0.06, 0.08);
+  },
+  success: function() {
+    var self = this;
+    this.playTone(523, 'sine', 0.1, 0.1);
+    setTimeout(function() { self.playTone(659, 'sine', 0.1, 0.1); }, 80);
+    setTimeout(function() { self.playTone(784, 'sine', 0.2, 0.12); }, 160);
+  },
+  craft: function() {
+    var self = this;
+    this.playTone(330, 'square', 0.08, 0.08);
+    setTimeout(function() { self.playTone(440, 'square', 0.08, 0.08); }, 90);
+    setTimeout(function() { self.playTone(587, 'triangle', 0.18, 0.1); }, 180);
+  },
+  damage: function() {
+    this.playTone(150, 'sawtooth', 0.25, 0.15);
+  },
+  victory: function() {
+    var self = this;
+    [523, 659, 784, 1046].forEach(function(f, i) {
+      setTimeout(function() { self.playTone(f, 'sine', 0.35, 0.15); }, i * 150);
+    });
+  }
+};
+
+function showToast(message, type) {
+  var container = document.getElementById('toastContainer');
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + (type || 'info');
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(function() {
+    if (toast.parentNode) toast.parentNode.removeChild(toast);
+  }, 3500);
+}
+
+function showLoading(text) {
+  State.isBusy = true;
+  document.getElementById('loadingText').textContent = text || '通信中...';
+  document.getElementById('loadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+  State.isBusy = false;
+  document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+function openModal(modalId) {
+  var m = document.getElementById(modalId);
+  if (m) m.classList.add('active');
+}
+
+function closeModal(modalId) {
+  var m = document.getElementById(modalId);
+  if (m) m.classList.remove('active');
+}
+
+function showView(viewId) {
+  var views = ['viewTitle', 'viewLobby', 'viewGame', 'viewVictory', 'viewGameOver'];
+  views.forEach(function(v) {
+    var el = document.getElementById(v);
+    if (el) el.style.display = (v === viewId) ? 'block' : 'none';
+  });
+  if (viewId === 'viewTitle') {
+    var titleEl = document.getElementById('viewTitle');
+    if (titleEl) titleEl.style.display = 'flex';
+  }
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  bindUIEvents();
+  checkSavedSession();
+});
+
+function checkSavedSession() {
+  var savedPlayerId = localStorage.getItem('island_player_id');
+  var savedToken = localStorage.getItem('island_auth_token');
+  var statusText = document.getElementById('sessionStatusText');
+
+  if (savedPlayerId && savedToken) {
+    statusText.textContent = '以前のセッションを確認中...';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.success) {
+          State.player = res.player;
+          var pid = res.player.playerId || res.player.player_id || savedPlayerId;
+          State.player.playerId = pid;
+          State.player.player_id = pid;
+          State.token = savedToken;
+          updateHeaderProfile();
+          statusText.textContent = 'プレイヤー: ' + res.player.name + ' (' + res.player.role + ') でログイン済み';
+          
+          if (res.currentIsland) {
+            State.island = res.currentIsland;
+            document.getElementById('btnTitleResumeIsland').style.display = 'block';
+            document.getElementById('btnTitleResumeIsland').textContent = '🔄 「' + res.currentIsland.island_name + '」に戻る';
+          }
+        } else {
+          statusText.textContent = '新規プレイヤーとして開始できます';
+          localStorage.removeItem('island_player_id');
+          localStorage.removeItem('island_auth_token');
+        }
+      })
+      .withFailureHandler(function() {
+        statusText.textContent = '通信環境を確認してください';
+      })
+      .verifySession(savedPlayerId, savedToken);
+  } else {
+    statusText.textContent = '新規プレイヤーとして開始できます';
+  }
+}
+
+function updateHeaderProfile() {
+  var tag = document.getElementById('playerProfileTag');
+  if (State.player) {
+    tag.style.display = 'inline-block';
+    tag.textContent = '👤 ' + State.player.name + ' [' + State.player.role + ']';
+  } else {
+    tag.style.display = 'none';
+  }
+}
+
+function bindUIEvents() {
+  document.getElementById('btnSoundToggle').addEventListener('click', function() {
+    State.soundEnabled = !State.soundEnabled;
+    this.textContent = State.soundEnabled ? '🔊' : '🔇';
+    showToast('効果音: ' + (State.soundEnabled ? 'ON' : 'OFF'));
+  });
+
+  document.getElementById('btnHelp').addEventListener('click', function() {
+    openModal('modalHowToPlay');
+    SoundFx.click();
+  });
+  document.getElementById('btnTitleHowToPlay').addEventListener('click', function() {
+    openModal('modalHowToPlay');
+    SoundFx.click();
+  });
+
+  document.querySelectorAll('.modal-close, [data-close]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var modalId = this.getAttribute('data-close') || this.closest('.modal-overlay').id;
+      closeModal(modalId);
+      SoundFx.click();
+    });
+  });
+
+  document.querySelectorAll('.role-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      document.querySelectorAll('.role-card').forEach(function(c) { c.classList.remove('selected'); });
+      this.classList.add('selected');
+      State.selectedRole = this.getAttribute('data-role');
+      SoundFx.click();
+    });
+  });
+
+  document.getElementById('btnTitleCreateIsland').addEventListener('click', function() {
+    SoundFx.click();
+    ensureRegistered(function() {
+      openModal('modalCreateIsland');
+    });
+  });
+
+  document.getElementById('btnTitleJoinIsland').addEventListener('click', function() {
+    SoundFx.click();
+    ensureRegistered(function() {
+      openModal('modalJoinIsland');
+    });
+  });
+
+  document.getElementById('btnTitleResumeIsland').addEventListener('click', function() {
+    SoundFx.click();
+    if (State.island) {
+      enterGame();
+    }
+  });
+
+  document.getElementById('btnSubmitRegister').addEventListener('click', function() {
+    var name = document.getElementById('regPlayerName').value.trim();
+    if (!name) {
+      showToast('名前を入力してください', 'error');
+      return;
+    }
+    showLoading('生存者を登録中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          State.player = res.player;
+          State.token = res.token;
+          localStorage.setItem('island_player_id', res.playerId);
+          localStorage.setItem('island_auth_token', res.token);
+          updateHeaderProfile();
+          closeModal('modalRegister');
+          showToast('サバイバー登録完了！', 'success');
+          SoundFx.success();
+          if (State.postRegisterCallback) {
+            State.postRegisterCallback();
+            State.postRegisterCallback = null;
+          }
+        } else {
+          showToast(res.message || '登録エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .registerPlayer(name, State.selectedRole);
+  });
+
+  document.getElementById('btnSubmitCreateIsland').addEventListener('click', function() {
+    var islandName = document.getElementById('inputCreateIslandName').value.trim() || '名もなき孤島';
+    showLoading('島を開拓中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          closeModal('modalCreateIsland');
+          SoundFx.success();
+          showToast('島を開拓しました！招待コード: ' + res.inviteCode, 'success');
+          loadIslandData(res.islandId, function() {
+            enterLobby();
+          });
+        } else {
+          showToast(res.message || '島作成エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .createIsland(State.player.playerId, State.token, islandName);
+  });
+
+  document.getElementById('btnSubmitJoinIsland').addEventListener('click', function() {
+    var code = document.getElementById('inputJoinInviteCode').value.trim();
+    if (!code) {
+      showToast('招待コードを入力してください', 'error');
+      return;
+    }
+    showLoading('島を探索中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        if (res && res.success) {
+          closeModal('modalJoinIsland');
+          SoundFx.success();
+          showToast('「' + res.islandName + '」に合流しました！', 'success');
+          loadIslandData(res.islandId, function() {
+            enterLobby();
+          });
+        } else {
+          showToast(res.message || '参加エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .joinIsland(getPlayerId(), getAuthToken(), code);
+  });
+
+  document.getElementById('btnCopyInviteCode').addEventListener('click', function() {
+    var code = document.getElementById('lobbyInviteCode').textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(function() {
+        showToast('招待コードをクリップボードにコピーしました！', 'success');
+        SoundFx.click();
+      });
+    } else {
+      showToast('招待コード: ' + code);
+    }
+  });
+
+  document.getElementById('btnStartAdventure').addEventListener('click', function() {
+    SoundFx.success();
+    enterGame();
+  });
+
+  document.getElementById('btnLeaveLobby').addEventListener('click', function() {
+    if (confirm('島から退出しますか？（後から招待コードで再参加できます）')) {
+      showLoading('退出中...');
+      google.script.run
+        .withSuccessHandler(function() {
+          hideLoading();
+          stopPolling();
+          State.island = null;
+          showView('viewTitle');
+        })
+        .withFailureHandler(function() {
+          hideLoading();
+          showView('viewTitle');
+        })
+        .leaveIsland(getPlayerId(), getAuthToken(), getIslandId());
+    }
+  });
+
+  document.querySelectorAll('.nav-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var targetTabId = this.getAttribute('data-tab');
+      document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-content').forEach(function(c) { c.style.display = 'none'; });
+      this.classList.add('active');
+      var content = document.getElementById(targetTabId);
+      if (content) content.style.display = 'block';
+      SoundFx.click();
+    });
+  });
+
+  document.querySelectorAll('.btn-explore').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var loc = this.getAttribute('data-location');
+      executeExplore(loc);
+    });
+  });
+
+  document.getElementById('btnAdvanceTime').addEventListener('click', function() {
+    SoundFx.click();
+    if (confirm('時間を進めて休息をとりますか？（空腹と渇きが進行し、拠点設備によってスタミナが回復します）')) {
+      executeAdvanceTime();
+    }
+  });
+
+  document.getElementById('btnSendChatMessage').addEventListener('click', executeSendMessage);
+  document.getElementById('inputChatMessage').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') executeSendMessage();
+  });
+
+  document.getElementById('btnSubmitGiveItem').addEventListener('click', function() {
+    var targetPlayerId = document.getElementById('selectGiveTarget').value;
+    var qty = parseInt(document.getElementById('inputGiveQuantity').value, 10);
+    if (!targetPlayerId || isNaN(qty) || qty <= 0) {
+      showToast('相手と数量を正しく選択してください', 'error');
+      return;
+    }
+    showLoading('アイテムを手渡し中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        closeModal('modalGiveItem');
+        if (res && res.success) {
+          SoundFx.success();
+          showToast('アイテムを手渡しました！', 'success');
+          pollState();
+        } else {
+          showToast(res.message || '手渡しエラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .giveItemToPlayer(getPlayerId(), getAuthToken(), getIslandId(), targetPlayerId, State.pendingGiveItemId, qty);
+  });
+
+  document.getElementById('btnSubmitRescue').addEventListener('click', function() {
+    if (!State.pendingRescueTargetId) return;
+    showLoading('救助中...');
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoading();
+        closeModal('modalRescue');
+        if (res && res.success) {
+          SoundFx.success();
+          showToast(res.message, 'success');
+          pollState();
+        } else {
+          showToast(res.message || '救助エラー', 'error');
+        }
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        showToast('通信エラー: ' + err.message, 'error');
+      })
+      .rescuePlayer(getPlayerId(), getAuthToken(), getIslandId(), State.pendingRescueTargetId);
+  });
+
+  document.getElementById('btnEscapeRaft').addEventListener('click', function() {
+    if (confirm('いかだに乗り込み、未知の大海原へと脱出しますか？（全員でクリアとなります！）')) {
+      showLoading('脱出出港中...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          hideLoading();
+          if (res && res.success) {
+            SoundFx.victory();
+            showVictory(State.island.day);
+          } else {
+            showToast(res.message || '脱出条件を満たしていません', 'error');
+          }
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          showToast('通信エラー: ' + err.message, 'error');
+        })
+        .escapeIsland(getPlayerId(), getAuthToken(), getIslandId());
+    }
+  });
+
+  document.getElementById('btnVictoryReturnTitle').addEventListener('click', function() {
+    stopPolling();
+    State.island = null;
+    showView('viewTitle');
+  });
+  document.getElementById('btnGameoverReturnTitle').addEventListener('click', function() {
+    stopPolling();
+    State.island = null;
+    showView('viewTitle');
+  });
+}
+
+function ensureRegistered(callback) {
+  if (State.player && State.token) {
+    callback();
+  } else {
+    State.postRegisterCallback = callback;
+    openModal('modalRegister');
+  }
+}
+
+function enterLobby() {
+  showView('viewLobby');
+  document.getElementById('lobbyIslandName').textContent = State.island.island_name;
+  document.getElementById('lobbyInviteCode').textContent = State.island.invite_code;
+  renderLobbyMembers();
+  startPolling();
+}
+
+function enterGame() {
+  showView('viewGame');
+  updateGameView();
+  startPolling();
+}
+
+function renderLobbyMembers() {
+  var list = document.getElementById('lobbyMemberList');
+  list.innerHTML = '';
+  document.getElementById('lobbyMemberCount').textContent = State.members.length;
+
+  State.members.forEach(function(m) {
+    var item = document.createElement('div');
+    item.className = 'team-chip';
+    item.innerHTML = `
+      <div class="${m.isOnline ? 'online-dot' : 'offline-dot'}"></div>
+      <div style="flex: 1;">
+        <span style="font-weight: 700; color: #fff;">${m.name}</span>
+        <span style="font-size: 0.75rem; color: var(--accent-gold); margin-left: 6px;">[${m.role}]</span>
+      </div>
+      <span style="font-size: 0.75rem; color: var(--text-muted);">${m.isOnline ? 'オンライン' : '離席中'}</span>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function startPolling() {
+  stopPolling();
+  pollState();
+  State.pollingTimer = setInterval(function() {
+    pollState();
+  }, 4000);
+}
+
+function stopPolling() {
+  if (State.pollingTimer) {
+    clearInterval(State.pollingTimer);
+    State.pollingTimer = null;
+  }
+}
+
+function pollState() {
+  if (!State.player || !State.island) return;
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success) {
+        State.island = res.island;
+        State.player = res.player;
+        State.members = res.members || [];
+        State.personalInventory = res.personalInventory || [];
+        State.sharedInventory = res.sharedInventory || [];
+        State.buildings = res.buildings || [];
+        State.messages = res.messages || [];
+        State.logs = res.logs || [];
+        State.itemsMap = res.itemsMap || {};
+
+        if (State.island.island_status === 'CLEARED') {
+          showVictory(State.island.day);
+          return;
+        }
+        if (State.island.island_status === 'GAMEOVER') {
+          showGameOver(State.island.day);
+          return;
+        }
+
+        updateGameView();
+        renderLobbyMembers();
+      }
+    })
+    .getIslandState(getPlayerId(), getAuthToken(), getIslandId(), null, null);
+}
+
+function loadIslandData(islandId, callback) {
+  showLoading('島情報を取得中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        State.island = res.island;
+        State.player = res.player;
+        var pid = (res.player && (res.player.playerId || res.player.player_id)) || getPlayerId();
+        if (State.player) {
+          State.player.playerId = pid;
+          State.player.player_id = pid;
+        }
+        State.members = res.members || [];
+        State.personalInventory = res.personalInventory || [];
+        State.sharedInventory = res.sharedInventory || [];
+        State.buildings = res.buildings || [];
+        State.messages = res.messages || [];
+        State.logs = res.logs || [];
+        State.itemsMap = res.itemsMap || {};
+        if (callback) callback();
+      } else {
+        showToast(res.message || '島の読み込みに失敗しました', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .getIslandState(getPlayerId(), getAuthToken(), islandId, null, null);
+}
+
+function updateGameView() {
+  if (!State.island || !State.player) return;
+
+  document.getElementById('hudIslandName').textContent = State.island.island_name;
+  document.getElementById('hudDay').textContent = State.island.day;
+
+  var pBadge = document.getElementById('hudTimePeriod');
+  var pNames = { MORNING: '朝', NOON: '昼', EVENING: '夕方', NIGHT: '夜' };
+  var pClasses = { MORNING: 'period-morning', NOON: 'period-noon', EVENING: 'period-evening', NIGHT: 'period-night' };
+  pBadge.textContent = pNames[State.island.time_period] || State.island.time_period;
+  pBadge.className = 'time-period-badge ' + (pClasses[State.island.time_period] || '');
+
+  updateGauge('valHp', 'gaugeHp', State.player.hp);
+  updateGauge('valHunger', 'gaugeHunger', State.player.hunger);
+  updateGauge('valThirst', 'gaugeThirst', State.player.thirst);
+  updateGauge('valStamina', 'gaugeStamina', State.player.stamina);
+
+  var teamPanel = document.getElementById('teamPanel');
+  teamPanel.innerHTML = '';
+  State.members.forEach(function(m) {
+    if (m.playerId === State.player.playerId) return;
+    var chip = document.createElement('div');
+    chip.className = 'team-chip' + (m.status === 'DEAD' ? ' is-dead' : '');
+    
+    var rescueBtnHtml = (m.status === 'DEAD' && State.player.status === 'ALIVE')
+      ? `<button class="btn btn-sm btn-danger" onclick="promptRescue('${m.playerId}', '${m.name}')">救助</button>`
+      : '';
+
+    chip.innerHTML = `
+      <div class="${m.isOnline ? 'online-dot' : 'offline-dot'}"></div>
+      <div style="flex: 1; font-size: 0.75rem;">
+        <div style="font-weight: 700; color: #fff;">${m.name} <span style="color: var(--accent-gold);">[${m.role}]</span></div>
+        <div style="color: ${m.status === 'DEAD' ? '#f87171' : 'var(--text-muted)'};">
+          ${m.status === 'DEAD' ? '💀 死亡状態' : `HP: ${m.hp} | 🍖${m.hunger} 💧${m.thirst}`}
+        </div>
+      </div>
+      ${rescueBtnHtml}
+    `;
+    teamPanel.appendChild(chip);
+  });
+
+  renderInventory();
+  renderSharedInventory();
+  renderCraftList();
+  renderBaseBuildings();
+  renderMessages();
+  renderLogs();
+  checkEscapeFeasibility();
+}
+
+function updateGauge(textId, barId, val) {
+  val = Math.max(0, Math.min(100, Math.round(val)));
+  document.getElementById(textId).textContent = val + ' / 100';
+  document.getElementById(barId).style.width = val + '%';
+}
+
+function renderInventory() {
+  var grid = document.getElementById('inventoryGrid');
+  grid.innerHTML = '';
+
+  if (State.personalInventory.length === 0) {
+    grid.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 10px;">持ち物はありません。探索で資源を集めましょう。</div>';
+    return;
+  }
+
+  State.personalInventory.forEach(function(item) {
+    var def = State.itemsMap[item.itemId] || { name: item.itemId, category: 'item' };
+    var icon = ITEM_ICONS[item.itemId] || '📦';
+    var isUsable = (def.category === 'food' || def.category === 'drink' || def.category === 'medical');
+
+    var slot = document.createElement('div');
+    slot.className = 'item-slot';
+    slot.innerHTML = `
+      <div class="item-icon">${icon}</div>
+      <div class="item-name" title="${def.name}">${def.name}</div>
+      <div class="item-qty">×${item.quantity}</div>
+      <div class="item-slot-actions">
+        ${isUsable ? `<button class="btn btn-sm btn-primary" onclick="executeUseItem('${item.itemId}')" title="使用">使用</button>` : ''}
+        <button class="btn btn-sm" onclick="executeTransfer('deposit', '${item.itemId}', 1)" title="倉庫へ">預ける</button>
+        <button class="btn btn-sm" onclick="promptGiveItem('${item.itemId}', '${def.name}', ${item.quantity})" title="仲間に渡す">渡す</button>
+      </div>
+    `;
+    grid.appendChild(slot);
+  });
+}
+
+function renderSharedInventory() {
+  var grid = document.getElementById('sharedGrid');
+  grid.innerHTML = '';
+
+  if (State.sharedInventory.length === 0) {
+    grid.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 10px;">共有倉庫は空です。</div>';
+    return;
+  }
+
+  State.sharedInventory.forEach(function(item) {
+    var def = State.itemsMap[item.itemId] || { name: item.itemId };
+    var icon = ITEM_ICONS[item.itemId] || '📦';
+
+    var slot = document.createElement('div');
+    slot.className = 'item-slot';
+    slot.innerHTML = `
+      <div class="item-icon">${icon}</div>
+      <div class="item-name" title="${def.name}">${def.name}</div>
+      <div class="item-qty">×${item.quantity}</div>
+      <div class="item-slot-actions">
+        <button class="btn btn-sm btn-gold" onclick="executeTransfer('withdraw', '${item.itemId}', 1)">1個引出</button>
+        ${item.quantity >= 5 ? `<button class="btn btn-sm" onclick="executeTransfer('withdraw', '${item.itemId}', 5)">5個</button>` : ''}
+      </div>
+    `;
+    grid.appendChild(slot);
+  });
+}
+
+function getMaterialStock(itemId, useShared) {
+  var targetList = useShared ? State.sharedInventory : State.personalInventory;
+  for (var i = 0; i < targetList.length; i++) {
+    if (targetList[i].itemId === itemId) return targetList[i].quantity;
+  }
+  return 0;
+}
+
+function renderCraftList() {
+  var list = document.getElementById('craftList');
+  list.innerHTML = '';
+  var useShared = document.getElementById('chkUseSharedCraft').checked;
+  var isCraftsman = (State.player.role === 'CRAFTSMAN');
+
+  var recipes = [
+    { id: 'rec_axe', name: '石の斧', result: 'stone_axe', wood: 3, stone: 2, other: [], desc: '木材収集効率UP' },
+    { id: 'rec_spear', name: '槍', result: 'spear', wood: 3, stone: 1, other: [{ id: 'rope', qty: 1 }], desc: '野獣撃退・狩猟UP' },
+    { id: 'rec_rod', name: '釣り竿', result: 'fishing_rod', wood: 2, stone: 0, other: [{ id: 'rope', qty: 2 }], desc: '魚の獲得確率UP' },
+    { id: 'rec_torch', name: 'たいまつ', result: 'torch', wood: 1, stone: 0, other: [{ id: 'cloth', qty: 1 }], desc: '洞窟事故防止' },
+    { id: 'rec_rope', name: 'ロープ', result: 'rope', wood: 0, stone: 0, other: [{ id: 'herb', qty: 2 }], desc: 'クラフト・建築用の綱' },
+    { id: 'rec_cloth', name: '布', result: 'cloth', wood: 0, stone: 0, other: [{ id: 'herb', qty: 3 }], desc: 'テント・いかだ用の布' },
+    { id: 'rec_raft', name: 'いかだの骨組み', result: 'raft_piece', wood: 10, stone: 5, other: [{ id: 'rope', qty: 5 }, { id: 'cloth', qty: 3 }], desc: '脱出用いかだパーツ' }
+  ];
+
+  recipes.forEach(function(rec) {
+    var reqWood = (isCraftsman && rec.wood > 1) ? Math.max(1, Math.floor(rec.wood * 0.8)) : rec.wood;
+    var reqStone = (isCraftsman && rec.stone > 1) ? Math.max(1, Math.floor(rec.stone * 0.8)) : rec.stone;
+
+    var stockWood = getMaterialStock('wood', useShared);
+    var stockStone = getMaterialStock('stone', useShared);
+
+    var canCraft = true;
+    var tagsHtml = '';
+
+    if (reqWood > 0) {
+      var ok = stockWood >= reqWood;
+      if (!ok) canCraft = false;
+      tagsHtml += `<span class="req-tag ${ok ? 'ok' : 'missing'}">木材: ${stockWood}/${reqWood}</span>`;
+    }
+    if (reqStone > 0) {
+      var ok2 = stockStone >= reqStone;
+      if (!ok2) canCraft = false;
+      tagsHtml += `<span class="req-tag ${ok2 ? 'ok' : 'missing'}">石: ${stockStone}/${reqStone}</span>`;
+    }
+
+    rec.other.forEach(function(ot) {
+      var reqOtQty = (isCraftsman && ot.qty > 1) ? Math.max(1, Math.floor(ot.qty * 0.8)) : ot.qty;
+      var stockOt = getMaterialStock(ot.id, useShared);
+      var okOt = stockOt >= reqOtQty;
+      if (!okOt) canCraft = false;
+      var otName = (State.itemsMap[ot.id] || {}).name || ot.id;
+      tagsHtml += `<span class="req-tag ${okOt ? 'ok' : 'missing'}">${otName}: ${stockOt}/${reqOtQty}</span>`;
+    });
+
+    var card = document.createElement('div');
+    card.className = 'recipe-card' + (canCraft ? ' craftable' : '');
+    card.innerHTML = `
+      <div class="recipe-info">
+        <div class="recipe-title">
+          <span>${ITEM_ICONS[rec.result] || '⚒️'}</span>
+          <span>${rec.name}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">${rec.desc}</span>
+        </div>
+        <div class="recipe-reqs">${tagsHtml}</div>
+      </div>
+      <button class="btn btn-sm ${canCraft ? 'btn-primary' : ''}" ${canCraft ? '' : 'disabled'} onclick="executeCraft('${rec.id}')">
+        クラフト
+      </button>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderBaseBuildings() {
+  var list = document.getElementById('baseBuildingList');
+  list.innerHTML = '';
+  var isCraftsman = (State.player.role === 'CRAFTSMAN');
+
+  var buildingsConfig = [
+    { type: 'campfire', name: '焚き火', wood: 5, stone: 3, other: [], maxLv: 1 },
+    { type: 'tent', name: 'テント', wood: 8, stone: 0, other: [{ id: 'cloth', qty: 2 }, { id: 'rope', qty: 2 }], maxLv: 1 },
+    { type: 'cabin', name: '木の小屋', wood: 20, stone: 10, other: [{ id: 'rope', qty: 4 }], maxLv: 1 },
+    { type: 'water_collector', name: '貯水設備', wood: 10, stone: 5, other: [{ id: 'cloth', qty: 2 }], maxLv: 1 },
+    { type: 'raft', name: '脱出用いかだ', wood: 15, stone: 5, other: [{ id: 'rope', qty: 5 }], maxLv: 3 }
+  ];
+
+  buildingsConfig.forEach(function(bConf) {
+    var bInfo = BUILDING_INFO[bConf.type] || { name: bConf.name, icon: '⛺', desc: '' };
+    var currentLv = 0;
+    var builtBy = '';
+
+    for (var i = 0; i < State.buildings.length; i++) {
+      if (State.buildings[i].buildingType === bConf.type) {
+        currentLv = State.buildings[i].level;
+        builtBy = State.buildings[i].createdBy;
+        break;
+      }
+    }
+
+    var isMax = (currentLv >= bConf.maxLv);
+    var nextLv = currentLv + 1;
+    var mult = nextLv;
+
+    var reqWood = Math.floor(bConf.wood * mult * (isCraftsman ? 0.8 : 1.0));
+    var reqStone = Math.floor(bConf.stone * mult * (isCraftsman ? 0.8 : 1.0));
+
+    var stockWood = getMaterialStock('wood', true);
+    var stockStone = getMaterialStock('stone', true);
+
+    var canBuild = !isMax;
+    var tagsHtml = '';
+
+    if (!isMax) {
+      if (reqWood > 0) {
+        var okW = stockWood >= reqWood;
+        if (!okW) canBuild = false;
+        tagsHtml += `<span class="req-tag ${okW ? 'ok' : 'missing'}">共有木材: ${stockWood}/${reqWood}</span>`;
+      }
+      if (reqStone > 0) {
+        var okS = stockStone >= reqStone;
+        if (!okS) canBuild = false;
+        tagsHtml += `<span class="req-tag ${okS ? 'ok' : 'missing'}">共有石: ${stockStone}/${reqStone}</span>`;
+      }
+      bConf.other.forEach(function(ot) {
+        var reqOt = Math.floor(ot.qty * mult * (isCraftsman ? 0.8 : 1.0));
+        var stockOt = getMaterialStock(ot.id, true);
+        var okOt = stockOt >= reqOt;
+        if (!okOt) canBuild = false;
+        var oName = (State.itemsMap[ot.id] || {}).name || ot.id;
+        tagsHtml += `<span class="req-tag ${okOt ? 'ok' : 'missing'}">共有${oName}: ${stockOt}/${reqOt}</span>`;
+      });
+    }
+
+    var card = document.createElement('div');
+    card.className = 'recipe-card' + (canBuild ? ' craftable' : '');
+    card.innerHTML = `
+      <div class="recipe-info">
+        <div class="recipe-title">
+          <span>${bInfo.icon}</span>
+          <span>${bInfo.name}</span>
+          <span class="island-badge" style="background: ${currentLv > 0 ? 'var(--accent-green)' : '#475569'};">
+            ${currentLv > 0 ? 'Lv.' + currentLv : '未建築'}
+          </span>
+          ${builtBy ? `<span style="font-size: 0.72rem; color: var(--text-muted);">建設: ${builtBy}</span>` : ''}
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${bInfo.desc}</div>
+        ${!isMax ? `<div class="recipe-reqs">${tagsHtml}</div>` : '<div style="font-size: 0.75rem; color: #4ade80; margin-top: 4px;">★ 最大レベルに到達済み</div>'}
+      </div>
+      <div>
+        ${isMax ? '<button class="btn btn-sm" disabled>完成済</button>' : `
+          <button class="btn btn-sm ${canBuild ? 'btn-gold' : ''}" ${canBuild ? '' : 'disabled'} onclick="executeBuild('${bConf.type}')">
+            ${currentLv === 0 ? '建設する' : 'Lvアップ'}
+          </button>
+        `}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderMessages() {
+  var chatBox = document.getElementById('chatMessages');
+  chatBox.innerHTML = '';
+
+  State.messages.forEach(function(msg) {
+    var isMine = (msg.playerId === State.player.playerId);
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble' + (isMine ? ' mine' : '');
+    bubble.innerHTML = `
+      <div class="chat-meta">
+        <span style="font-weight: 700; color: ${isMine ? 'var(--accent-gold)' : '#90caf9'};">${msg.playerName}</span>
+        <span>${msg.createdAt.substring(11, 16)}</span>
+      </div>
+      <div>${msg.message}</div>
+    `;
+    chatBox.appendChild(bubble);
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function renderLogs() {
+  var logBox = document.getElementById('activityLogs');
+  logBox.innerHTML = '';
+
+  State.logs.forEach(function(lg) {
+    var item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `<span class="log-day">${lg.day}日目</span> ${lg.action}`;
+    logBox.appendChild(item);
+  });
+
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function checkEscapeFeasibility() {
+  var raftLv = 0;
+  for (var b = 0; b < State.buildings.length; b++) {
+    if (State.buildings[b].buildingType === 'raft') {
+      raftLv = State.buildings[b].level;
+      break;
+    }
+  }
+
+  var waterStock = getMaterialStock('water', true);
+  var foodStock = getMaterialStock('berry', true) + getMaterialStock('fish', true);
+
+  var btn = document.getElementById('btnEscapeRaft');
+  if (raftLv >= 3 && waterStock >= 10 && foodStock >= 10) {
+    btn.style.display = 'inline-flex';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function executeExplore(location) {
+  showLoading('探索中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.success();
+        showToast(res.message, 'success');
+        if (res.player) {
+          State.player = Object.assign(State.player || {}, res.player);
+        }
+        updateGameView();
+        pollState();
+      } else {
+        SoundFx.damage();
+        showToast(res.message || '探索失敗', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .exploreLocation(getPlayerId(), getAuthToken(), getIslandId(), location);
+}
+
+function executeAdvanceTime() {
+  showLoading('時間を進行中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.success();
+        showToast('時間が進みました！', 'success');
+        if (res.player) {
+          State.player = Object.assign(State.player || {}, res.player);
+        }
+        if (res.island) {
+          State.island = Object.assign(State.island || {}, res.island);
+        }
+        updateGameView();
+        pollState();
+      } else {
+        showToast(res.message || '時間進行エラー', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .advanceTime(getPlayerId(), getAuthToken(), getIslandId());
+}
+
+function executeUseItem(itemId) {
+  SoundFx.click();
+  showLoading('使用中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.success();
+        showToast(res.message, 'success');
+        if (res.player) {
+          State.player = Object.assign(State.player || {}, res.player);
+        }
+        updateGameView();
+        pollState();
+      } else {
+        showToast(res.message || '使用できませんでした', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .useItem(getPlayerId(), getAuthToken(), getIslandId(), itemId);
+}
+
+function executeTransfer(action, itemId, quantity) {
+  SoundFx.click();
+  showLoading('物資を移動中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        pollState();
+      } else {
+        showToast(res.message || '倉庫エラー', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .transferItem(getPlayerId(), getAuthToken(), getIslandId(), action, itemId, quantity);
+}
+
+function executeCraft(recipeId) {
+  SoundFx.click();
+  var useShared = document.getElementById('chkUseSharedCraft').checked;
+  showLoading('クラフト中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.craft();
+        showToast(res.message, 'success');
+        pollState();
+      } else {
+        showToast(res.message || 'クラフト失敗', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .craftItem(getPlayerId(), getAuthToken(), getIslandId(), recipeId, useShared);
+}
+
+function executeBuild(buildingType) {
+  SoundFx.click();
+  showLoading('建築中...');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      hideLoading();
+      if (res && res.success) {
+        SoundFx.craft();
+        showToast(res.message, 'success');
+        pollState();
+      } else {
+        showToast(res.message || '建築失敗', 'error');
+      }
+    })
+    .withFailureHandler(function(err) {
+      hideLoading();
+      showToast('通信エラー: ' + err.message, 'error');
+    })
+    .buildStructure(getPlayerId(), getAuthToken(), getIslandId(), buildingType);
+}
+
+function executeSendMessage() {
+  var input = document.getElementById('inputChatMessage');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success) {
+        SoundFx.click();
+        pollState();
+      } else {
+        showToast(res.message || 'チャット送信失敗', 'error');
+      }
+    })
+    .sendMessage(getPlayerId(), getAuthToken(), getIslandId(), text);
+}
+
+function promptGiveItem(itemId, itemName, currentQty) {
+  State.pendingGiveItemId = itemId;
+  var sel = document.getElementById('selectGiveTarget');
+  sel.innerHTML = '';
+
+  var count = 0;
+  State.members.forEach(function(m) {
+    if (m.playerId !== State.player.playerId) {
+      var opt = document.createElement('option');
+      opt.value = m.playerId;
+      opt.textContent = m.name + ' (' + m.role + ')';
+      sel.appendChild(opt);
+      count++;
+    }
+  });
+
+  if (count === 0) {
+    showToast('現在、島に他の生存者がいません', 'info');
+    return;
+  }
+
+  document.getElementById('labelGiveItemName').textContent = itemName + ' を渡す数量 (所持: ' + currentQty + ')';
+  var numInput = document.getElementById('inputGiveQuantity');
+  numInput.value = 1;
+  numInput.max = currentQty;
+  openModal('modalGiveItem');
+}
+
+function promptRescue(targetPlayerId, targetName) {
+  State.pendingRescueTargetId = targetPlayerId;
+  document.getElementById('rescueTargetDesc').textContent =
+    `仲間【${targetName}】が息絶えかけています。薬草または真水を消費して蘇生します。（MEDICは物資なしでもスタミナ消費で蘇生可能）`;
+  openModal('modalRescue');
+}
+
+function showVictory(days) {
+  stopPolling();
+  document.getElementById('victoryDay').textContent = days + ' 日間';
+  showView('viewVictory');
+}
+
+function showGameOver(days) {
+  stopPolling();
+  SoundFx.damage();
+  document.getElementById('gameoverDay').textContent = days + ' 日間';
+  showView('viewGameOver');
+}
+  </script>
+</body>
+</html>
